@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CodeQuest AI | Admin Portal 🛡️</title>
+</head>
+
+<body>
+  <div id="app">
+    <nav class="sidebar">
+      <div class="sidebar-header">
+        <span class="logo">🛡️ AdminQuest</span>
+      </div>
+      <ul class="nav-links">
+        <li class="active" data-page="dash">Dashboard</li>
+        <li data-page="users">User Logs</li>
+        <li data-page="lessons">Moderation</li>
+      </ul>
+    </nav>
+
+    <main class="content">
+      <header class="top-bar">
+        <h1>System Overview</h1>
+        <div class="user-info">Admin Account 🔒</div>
+      </header>
+
+      <div id="dashboard-view" class="view active">
+        <div class="stats-grid">
+          <div class="stats-card">
+            <h3>Active Users</h3>
+            <p class="large-num">1,248</p>
+          </div>
+          <div class="stats-card">
+            <h3>Lessons Completed</h3>
+            <p class="large-num">12,402</p>
+          </div>
+          <div class="stats-card">
+            <h3>Average XP</h3>
+            <p class="large-num">450</p>
+          </div>
+        </div>
+        <div class="recent-activity">
+          <h3>Recent User Activity</h3>
+          <table id="activity-table">
+            <thead>
+              <tr>
+                <th>User</th>
+                <th>Action</th>
+                <th>XP</th>
+                <th>Time</th>
+              </tr>
+            </thead>
+            <tbody id="activity-log-body"></tbody>
+          </table>
+        </div>
+      </div>
+    </main>
+  </div>
+  <script type="module" src="/src/main.js"></script>
+</body>
+
+</html>

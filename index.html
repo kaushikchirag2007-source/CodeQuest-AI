@@ -5,6 +5,8 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>CodeQuest AI | Master Any Language 🌍💻</title>
+    <meta name="description" content="Learn coding and languages with AI-powered, Duolingo-style lessons powered by Gemini AI." />
+    <link rel="stylesheet" href="/src/style.css">
 </head>
 
 <body>
@@ -12,26 +14,24 @@
         <!-- Universal Header -->
         <header class="header">
             <div class="header-left">
-                <div class="stat-bubble" id="level-badge" title="Your Level">🌱</div>
-                <div class="stat-text">
-                    <span id="rank-text">Beginner</span>
-                </div>
+                <div class="stat-bubble fire">🔥 <span id="streak-count">0</span></div>
+                <div class="stat-bubble diamond">💎 <span id="gems-count">0</span></div>
             </div>
             <div class="header-center">
-                <div class="stat-item">🔥 <span id="streak-count">0</span></div>
-                <div class="stat-item">💎 <span id="xp-count">0</span></div>
+                <span class="rank-text" id="user-level">ELITE CODER</span>
+                <span><span id="xp-count">0</span> XP &nbsp; <span id="ai-status" class="ai-badge">Local AI</span></span>
             </div>
             <div class="header-right">
-                <button id="menu-btn" class="icon-btn">⚙️</button>
+                <button id="settings-btn" class="icon-btn" title="AI Settings">⚙️</button>
             </div>
         </header>
 
         <main id="main-content">
-            <!-- Character Container (Floats above screens) -->
+            <!-- Character Container -->
             <div id="character-container" class="character-area">
                 <div id="char-image" class="char-sprite">🤖</div>
                 <div class="bubble">
-                    <p id="char-dialogue">Hey! I'm Byte! Ready to decode some code?</p>
+                    <p id="char-dialogue">Hey! I'm your AI tutor! I'll build 100% unique lessons for you in real-time. Pick a path!</p>
                 </div>
             </div>
 
@@ -52,7 +52,26 @@
                 <button id="fb-continue-btn" class="btn btn-primary">Continue</button>
             </div>
         </div>
+        <!-- Developer Credits Footer -->
+        <footer class="dev-footer">
+            ❤️ Developed by <strong>Chirag</strong> &amp; <strong>Atharv</strong>
+        </footer>
     </div>
+
+    <!-- Settings Modal (outside #app for correct fixed positioning) -->
+    <div id="settings-modal" class="modal" style="display:none">
+        <div class="modal-content">
+            <h2>⚙️ AI Settings</h2>
+            <p>Enter your <strong>Gemini API Key</strong> for smarter, non-repeating lessons powered by real AI.</p>
+            <input type="password" id="api-key-input" placeholder="AIzaSy...">
+            <div class="modal-actions">
+                <button id="save-key-btn" class="primary-btn">✅ Save Key</button>
+                <button id="close-modal-btn" class="btn-text">Cancel</button>
+            </div>
+            <p class="small-note"><a href="https://aistudio.google.com/app/apikey" target="_blank">🔑 Get a free key here</a></p>
+        </div>
+    </div>
+
     <script type="module" src="/src/main.js"></script>
 </body>
 
