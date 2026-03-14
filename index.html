@@ -14,6 +14,7 @@
         <!-- Universal Header -->
         <header class="header">
             <div class="header-left">
+                <button id="back-btn" class="icon-btn hidden" title="Back">⬅️</button>
                 <div class="stat-bubble fire">🔥 <span id="streak-count">0</span></div>
                 <div class="stat-bubble diamond">💎 <span id="gems-count">0</span></div>
             </div>
@@ -22,16 +23,23 @@
                 <span><span id="xp-count">0</span> XP &nbsp; <span id="ai-status" class="ai-badge">Local AI</span></span>
             </div>
             <div class="header-right">
-                <button id="settings-btn" class="icon-btn" title="AI Settings">⚙️</button>
+                <button id="profile-btn" class="icon-btn" title="My Profile">👤</button>
             </div>
         </header>
 
         <main id="main-content">
-            <!-- Character Container -->
+            <!-- Character Container (Now Layered for Snapdragon-style Customization) -->
             <div id="character-container" class="character-area">
-                <div id="char-image" class="char-sprite">🤖</div>
+                <div id="avatar-container" class="layered-avatar">
+                   <div id="avatar-base" class="avatar-layer">🤖</div>
+                   <div id="avatar-hair" class="avatar-layer"></div>
+                   <div id="avatar-eyes" class="avatar-layer"></div>
+                   <div id="avatar-mouth" class="avatar-layer"></div>
+                   <div id="avatar-outfit" class="avatar-layer"></div>
+                   <div id="avatar-accessory" class="avatar-layer"></div>
+                </div>
                 <div class="bubble">
-                    <p id="char-dialogue">Hey! I'm your AI tutor! I'll build 100% unique lessons for you in real-time. Pick a path!</p>
+                    <p id="char-dialogue">Initializing CodeQuest AI... Preparing your journey.</p>
                 </div>
             </div>
 
@@ -40,6 +48,21 @@
                 <!-- Screens will be injected here -->
             </div>
         </main>
+
+        <nav class="bottom-nav">
+            <button id="nav-learn" class="nav-item active">
+                <span class="nav-icon">📖</span>
+                <span class="nav-label">Learn</span>
+            </button>
+            <button id="nav-games" class="nav-item">
+                <span class="nav-icon">🎮</span>
+                <span class="nav-label">Games</span>
+            </button>
+            <button id="nav-shop" class="nav-item">
+                <span class="nav-icon">🛒</span>
+                <span class="nav-label">Shop</span>
+            </button>
+        </nav>
 
         <!-- Feedback Layer -->
         <div id="feedback-layer" class="feedback-panel">
@@ -58,17 +81,28 @@
         </footer>
     </div>
 
-    <!-- Settings Modal (outside #app for correct fixed positioning) -->
-    <div id="settings-modal" class="modal" style="display:none">
+    <!-- Profile Modal -->
+    <div id="profile-modal" class="modal" style="display:none">
         <div class="modal-content">
-            <h2>⚙️ AI Settings</h2>
-            <p>Enter your <strong>Gemini API Key</strong> for smarter, non-repeating lessons powered by real AI.</p>
-            <input type="password" id="api-key-input" placeholder="AIzaSy...">
-            <div class="modal-actions">
-                <button id="save-key-btn" class="primary-btn">✅ Save Key</button>
-                <button id="close-modal-btn" class="btn-text">Cancel</button>
+            <h2 id="modal-user-name">👤 User Profile</h2>
+            <div class="profile-details">
+                <div id="modal-user-avatar" class="char-sprite">🤖</div>
+                <p id="modal-user-email">email@example.com</p>
+                <div class="stats-grid">
+                    <div class="stat-item">XP: <span id="modal-xp">0</span></div>
+                    <div class="stat-item">Streak: <span id="modal-streak">0</span></div>
+                    <div class="stat-item">Diamonds: <span id="modal-gems">0</span></div>
+                </div>
+                <div class="theme-toggle-container" style="margin-top: 20px; display: flex; align-items: center; gap: 10px;">
+                    <span>🌙 Dark Mode</span>
+                    <input type="checkbox" id="theme-switch" style="cursor: pointer; width: 40px; height: 20px;">
+                </div>
             </div>
-            <p class="small-note"><a href="https://aistudio.google.com/app/apikey" target="_blank">🔑 Get a free key here</a></p>
+            <div class="modal-actions">
+                <button id="edit-char-btn" class="primary-btn" style="background: var(--color-secondary); margin-bottom: 10px;">🎨 Edit Character</button>
+                <button id="logout-btn" class="btn-text" style="color: var(--color-wrong-text)">🚪 Log Out</button>
+                <button id="close-profile-btn" class="primary-btn">Close</button>
+            </div>
         </div>
     </div>
 

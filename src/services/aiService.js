@@ -14,6 +14,10 @@ export async function generateAiLesson(track, language, difficulty, seenIds = []
     try {
         const model = genAI().getGenerativeModel({ model: "gemini-1.5-flash" });
         
+        // Add a safety controller to abort long-hanging requests
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 8000); // 8 second timeout
+        
         const prompt = `
             You are an expert ${track === 'programming' ? 'Coding' : 'Language'} tutor like Duolingo.
             Generate a single unique lesson item for a ${difficulty} student learning ${language}.
@@ -55,17 +59,21 @@ export async function generateAiLesson(track, language, difficulty, seenIds = []
             }
         `;
 
-        const result = await model.generateContent(prompt);
+        const result = await model.generateContent(prompt, { signal: controller.signal });
+        clearTimeout(timeoutId);
         const response = await result.response;
         const text = response.text();
         
-        // Cleanup JSON if needed (sometimes LLMs wrap in ```json)
         const jsonMatch = text.match(/\{[\s\S]*\}/);
         if (!jsonMatch) throw new Error("Invalid AI response format");
         
         return JSON.parse(jsonMatch[0]);
     } catch (error) {
-        console.error("Gemini Error:", error);
+        if (error.name === 'AbortError') {
+            console.error("Gemini AI request timed out");
+        } else {
+            console.error("Gemini Error:", error);
+        }
         throw error;
     }
 }

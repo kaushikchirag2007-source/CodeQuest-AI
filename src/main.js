@@ -1,6 +1,6 @@
 import { characters, spokenLanguages, programmingLanguages, lessons, wordBank, syntaxMap } from './data/lessons.js'
 import { isAiEnabled, generateAiLesson } from './services/aiService.js'
-import { auth, db, googleProvider, githubProvider } from './services/firebase.js'
+import { auth, db, googleProvider } from './services/firebase.js'
 import { onAuthStateChanged, signInWithPopup, signOut } from 'firebase/auth'
 import { doc, getDoc, setDoc } from 'firebase/firestore'
 
@@ -11,10 +11,11 @@ const audio = {
 };
 
 // --- State ---
+// --- State ---
 let state = {
-  xp: parseInt(localStorage.getItem('cq_xp')) || 0,
-  streak: parseInt(localStorage.getItem('cq_streak')) || 0,
-  gems: parseInt(localStorage.getItem('cq_gems')) || 0,
+  xp: 0,
+  streak: 0,
+  gems: 0,
   level: 'Beginner',
   track: null,
   language: null,
@@ -23,58 +24,334 @@ let state = {
   activeChar: 'byte',
   selectedOption: null,
   isGenerating: false,
-  answeredQuestions: new Set(), // Track unique question IDs
+  answeredQuestions: new Set(),
   id: null,
   sessionProgress: 0,
-  sessionTotal: 10, // Number of items per session
-  sessionPool: [], // Pool for the current session
-  sessionInitialized: false, // True once pool has been built for this session
-  currentLesson: null 
+  sessionTotal: 10,
+  sessionPool: [],
+  sessionInitialized: false,
+  currentLesson: null,
+  avatar: {
+    base: '🤖',
+    hair: '',
+    eyes: '',
+    mouth: '',
+    outfit: '',
+    accessory: ''
+  },
+  inventory: [],
+  currentMode: 'learn',
+  user: null,
+  theme: 'light'
+};
+
+// Unified Persistence
+function saveState() {
+  const dataToSave = {
+    xp: state.xp,
+    streak: state.streak,
+    gems: state.gems,
+    track: state.track,
+    language: state.language,
+    avatar: state.avatar,
+    inventory: state.inventory,
+    displayName: state.displayName,
+    theme: state.theme
+  };
+
+  // Local Storage (Always save as fallback)
+  localStorage.setItem('cq_profile_v2', JSON.stringify(dataToSave));
+
+  // Firebase Cloud Sync
+  if (state.user) {
+    setDoc(doc(db, 'users', state.user.uid), dataToSave, { merge: true })
+      .catch(err => console.error("Cloud Sync Failed:", err));
+  }
+}
+
+const avatarLayers = {
+    base: document.getElementById('avatar-base'),
+    hair: document.getElementById('avatar-hair'),
+    eyes: document.getElementById('avatar-eyes'),
+    mouth: document.getElementById('avatar-mouth'),
+    outfit: document.getElementById('avatar-outfit'),
+    accessory: document.getElementById('avatar-accessory')
 };
 
 // --- DOM ---
 const screenContainer = document.getElementById('screen-container');
 const charDialogue = document.getElementById('char-dialogue');
-const charImage = document.getElementById('char-image');
 const feedbackLayer = document.getElementById('feedback-layer');
 const xpDisplay = document.getElementById('xp-count');
 const streakDisplay = document.getElementById('streak-count');
 
+let isFirstAuthFire = true;
+
 function init() {
-  updateStats();
-  setupSettings();
+  console.log("App Initializing...");
+  
+  setupGlobalListeners();
+
+  // 1. Try to recover from LocalStorage first (for instant UI feel)
+  const localData = localStorage.getItem('cq_profile_v2');
+  if (localData) {
+    try {
+      const parsed = JSON.parse(localData);
+      Object.assign(state, parsed);
+      
+      // Apply theme
+      document.documentElement.dataset.theme = state.theme || 'light';
+      themeSwitch.checked = (state.theme === 'dark');
+      
+      updateStats();
+      updateLayeredAvatar();
+      console.log("Local profile recovered.");
+    } catch(e) { console.warn("Failed to parse local profile"); }
+  }
+
+  setupProfileModal();
+  setupNavigation();
   
   onAuthStateChanged(auth, async (user) => {
+    console.log("Auth State Changed. User:", user ? user.email : "Logged Out");
+    
     if (user) {
       state.user = user;
+      updateCharacter('byte', "Connecting to CodeQuest Cloud... 🚀");
+      if (document.querySelector('.login-screen')) {
+         renderLoadingScreen("Syncing with Cloud...");
+      }
       await loadUserProfile(user.uid);
     } else {
       state.user = null;
-      renderLoginScreen();
+      // ALWAYS show the path selection screen with the 'Continue' button if data exists
+      renderOnboardingStep1();
     }
   });
 }
 
-async function loadUserProfile(uid) {
-  const docRef = doc(db, 'users', uid);
-  const docSnap = await getDoc(docRef);
-  
-  if (docSnap.exists()) {
-    const data = docSnap.data();
-    state.xp = data.xp || 0;
-    state.gems = data.gems || 0;
-    state.streak = data.streak || 0;
-    state.displayName = data.displayName || 'Hero';
-    state.avatar = data.avatar || '🤖';
+function setupGlobalListeners() {
+  // Back button setup
+  const backBtn = document.getElementById('back-btn');
+  if (backBtn) {
+    backBtn.onclick = (e) => {
+        e.preventDefault();
+        console.log("Back button clicked");
+        
+        // Context-aware back navigation
+        if (state.track && !state.language) {
+            state.track = null;
+            renderOnboardingStep1();
+        } else if (state.track && state.language) {
+            state.language = null;
+            state.sessionInitialized = false;
+            renderOnboardingStep2();
+        } else {
+            state.track = null;
+            state.language = null;
+            renderOnboardingStep1();
+        }
+        saveState();
+    };
+  }
+
+  // Theme switch setup
+  const themeSwitch = document.getElementById('theme-switch');
+  if (themeSwitch) {
+    themeSwitch.onchange = (e) => {
+        state.theme = e.target.checked ? 'dark' : 'light';
+        document.documentElement.dataset.theme = state.theme;
+        saveState();
+    };
+  }
+}
+function setupNavigation() {
+    const navItems = document.querySelectorAll('.nav-item');
+    navItems.forEach(item => {
+        item.onclick = () => {
+             const mode = item.id.replace('nav-', '');
+             if (state.currentMode === mode) return;
+
+             navItems.forEach(i => i.classList.remove('active'));
+             item.classList.add('active');
+             
+             switchMode(mode);
+        };
+    });
+}
+
+function switchMode(mode) {
+    state.currentMode = mode;
+    console.log("Switching to mode:", mode);
+    document.querySelector('.bottom-nav').classList.remove('hidden');
+    
+    switch(mode) {
+        case 'learn':
+            renderOnboardingStep1();
+            break;
+        case 'games':
+            renderGamesScreen();
+            break;
+        case 'shop':
+            renderShopScreen();
+            break;
+    }
+}
+
+function renderGamesScreen() {
+    updateCharacter('nova', "Ready for a challenge? Pick a game to sharpen your skills!");
+    screenContainer.innerHTML = `
+        <div class="games-grid">
+            <div class="card game-card" onclick="alert('Bug Wars coming soon!')">
+                <span class="card-icon">🐛</span>
+                <h3>Bug Wars</h3>
+                <p>Speed debugging challenge</p>
+            </div>
+            <div class="card game-card" onclick="alert('Code Clash coming soon!')">
+                <span class="card-icon">⚔️</span>
+                <h3>Code Clash</h3>
+                <p>Battle other coders</p>
+            </div>
+        </div>
+    `;
+}
+
+function renderShopScreen() {
+    updateCharacter('byte', "Spend your 💎 Diamonds to look awesome! New items every day.");
+    screenContainer.innerHTML = `
+        <div class="shop-screen">
+            <div class="shop-tabs">
+                <button class="shop-tab active">Hair</button>
+                <button class="shop-tab">Outfits</button>
+                <button class="shop-tab">Extras</button>
+            </div>
+            <div id="shop-items-grid" class="selection-grid">
+                <!-- Shop items will be rendered here -->
+                <p style="padding: 20px; color: var(--color-text-light)">Shop inventory loading...</p>
+            </div>
+        </div>
+    `;
+    renderShopItems();
+}
+
+const shopItems = [
+    { id: 'hair_punk', category: 'hair', name: 'Punk Hair', icon: '🤘', price: 100 },
+    { id: 'hair_afro', category: 'hair', name: 'Afro Style', icon: '🥦', price: 120 },
+    { id: 'outfit_cape', category: 'outfit', name: 'Hero Cape', icon: '🦸', price: 250 },
+    { id: 'outfit_suit', category: 'outfit', name: 'James Bond', icon: '🤵', price: 300 },
+    { id: 'accessory_glasses', category: 'accessory', name: 'Cool Glasses', icon: '🕶️', price: 50 },
+    { id: 'accessory_crown', category: 'accessory', name: 'Royal Crown', icon: '👑', price: 500 }
+];
+
+function renderShopItems() {
+    const grid = document.getElementById('shop-items-grid');
+    grid.innerHTML = shopItems.map(item => `
+        <div class="card shop-item" onclick="purchaseItem('${item.id}')">
+            <div class="item-icon">${item.icon}</div>
+            <div class="item-info">
+                <h4>${item.name}</h4>
+                <div class="item-price">💎 ${item.price}</div>
+            </div>
+        </div>
+    `).join('');
+}
+
+window.purchaseItem = async (itemId) => {
+    const item = shopItems.find(i => i.id === itemId);
+    
+    // Confirmation Dialog
+    const confirmed = confirm(`Do you want to purchase ${item.name} for 💎 ${item.price}?`);
+    if (!confirmed) return;
+
+    if (state.gems < item.price) {
+        alert("Not enough diamonds! Keep learning to earn more.");
+        return;
+    }
+
+    state.gems -= item.price;
+    state.inventory.push(itemId);
+    state.avatar[item.category] = item.icon;
     
     updateStats();
-    renderOnboardingStep1(); // Or dashboard if already onboarded
-  } else {
-    renderFirstTimeOnboarding();
+    updateLayeredAvatar();
+    saveState(); // Correctly save to BOTH LocalStorage and Cloud
+    
+    alert(`Purchased ${item.name}! Check your new look!`);
+};
+
+function updateLayeredAvatar() {
+    const layers = {
+        base: document.getElementById('avatar-base'),
+        hair: document.getElementById('avatar-hair'),
+        eyes: document.getElementById('avatar-eyes'),
+        mouth: document.getElementById('avatar-mouth'),
+        outfit: document.getElementById('avatar-outfit'),
+        accessory: document.getElementById('avatar-accessory')
+    };
+    
+    Object.keys(state.avatar).forEach(layer => {
+        if (layers[layer]) {
+            layers[layer].textContent = state.avatar[layer];
+        }
+    });
+}
+
+function renderLoadingScreen(msg = "Loading...") {
+  screenContainer.innerHTML = `
+    <div class="loading-screen">
+      <div class="loader-spinner"></div>
+      <p>${msg}</p>
+    </div>
+  `;
+}
+
+async function loadUserProfile(uid) {
+  console.log("Cloud sync for:", uid);
+  const docRef = doc(db, 'users', uid);
+  
+  try {
+    const docSnap = await getDoc(docRef);
+    
+    document.querySelector('.header').style.display = 'flex';
+    document.querySelector('.bottom-nav').classList.remove('hidden');
+    screenContainer.innerHTML = '';
+
+    if (docSnap.exists()) {
+      const data = docSnap.data();
+      // Merge cloud data into state
+      state.xp = data.xp ?? state.xp;
+      state.gems = data.gems ?? state.gems;
+      state.streak = data.streak ?? state.streak;
+      state.displayName = data.displayName || state.displayName;
+      state.avatar = data.avatar || state.avatar;
+      state.inventory = data.inventory || state.inventory;
+      state.track = data.track || state.track;
+      state.language = data.language || state.language;
+      
+      saveState(); // Update local storage with cloud data
+      updateStats();
+      updateLayeredAvatar();
+      
+      // Don't auto-start, let them see the 'Continue' button on the path screen
+      renderOnboardingStep1();
+    } else {
+      // First time cloud user, but might have guest progress
+      saveState(); // Ensure cloud gets whatever we have
+      renderOnboardingStep1();
+    }
+  } catch (err) {
+    console.warn("Cloud sync failed, continuing with local state:", err);
+    document.querySelector('.header').style.display = 'flex';
+    document.querySelector('.bottom-nav').classList.remove('hidden');
+    renderOnboardingStep1();
   }
 }
 
 function renderLoginScreen() {
+  // Hide UI for login
+  document.querySelector('.header').style.display = 'none';
+  document.querySelector('.bottom-nav').style.display = 'none';
+
   updateCharacter('byte', "Welcome back, Pioneer! Log in to sync your progress across the multiverse.");
   screenContainer.innerHTML = `
     <div class="login-screen">
@@ -83,100 +360,169 @@ function renderLoginScreen() {
         <button id="google-login-btn" class="primary-btn google-btn">
           <span class="btn-icon">🌐</span> Sign in with Google
         </button>
-        <button id="github-login-btn" class="primary-btn github-btn">
-          <span class="btn-icon">🐙</span> Sign in with GitHub
-        </button>
       </div>
       <p class="guest-note">Or <a href="#" id="guest-login-btn">Continue as Guest</a></p>
     </div>
   `;
   
-  document.getElementById('google-login-btn').onclick = () => signInWithPopup(auth, googleProvider);
-  document.getElementById('github-login-btn').onclick = () => signInWithPopup(auth, githubProvider);
+  document.getElementById('google-login-btn').onclick = () => {
+    signInWithPopup(auth, googleProvider)
+      .then(() => console.log("Sign-in successful"))
+      .catch((error) => {
+        console.error("Auth Error (Google):", error.code, error.message);
+        alert(`Sign-in failed: ${error.message}`);
+      });
+  };
+  
   document.getElementById('guest-login-btn').onclick = (e) => {
     e.preventDefault();
-    renderOnboardingStep1();
+    // Keep UI hidden during guest avatar creation
+    renderFirstTimeOnboarding();
   };
 }
 
-function renderFirstTimeOnboarding() {
-  updateCharacter('nova', "Greetings, Recruit! Let's set up your profile for the journey ahead.");
+function renderFirstTimeOnboarding(isEdit = false) {
+  updateCharacter('nova', isEdit ? "Ready for a new look? Tweak your hero!" : "Welcome, Recruit! Let's design your hero. Choose your features!");
+  
+  // Temporary state for the editor
+  const previewAvatar = { ...state.avatar };
+  
+  const categories = {
+    base: ['🤖', '🦊', '👾', '🦜', '🌟', '🧙', '🐱', '🐶', '🦄', '🐲'],
+    hair: ['', '🤘', '🥦', '👱', '👩‍🦰', '💇'],
+    outfit: ['', '🦸', '🤵', '👗', '🧥'],
+    accessory: ['', '🕶️', '👑', '🎓', '🎧']
+  };
+
   screenContainer.innerHTML = `
-    <div class="onboarding-flow">
-      <h2>Step 1: Choose Your Avatar</h2>
-      <div class="avatar-grid">
-        ${['🤖', '🦊', '👾', '🦜', '🌟', '🧙', '🐱', '🐶', '🦄', '🐲'].map(icon => `
-          <div class="avatar-option" data-icon="${icon}">${icon}</div>
-        `).join('')}
+    <div class="avatar-creator">
+      <div class="creator-preview">
+        <div class="selection-grid" id="creator-options">
+          <!-- Options injected here -->
+        </div>
       </div>
-      <div class="input-group">
-        <label>Display Name</label>
-        <input type="text" id="display-name-input" placeholder="Enter your hero name">
+      <div class="creator-tabs">
+          <button class="creator-tab active" data-cat="base">Body</button>
+          <button class="creator-tab" data-cat="hair">Hair</button>
+          <button class="creator-tab" data-cat="outfit">Outfit</button>
+          <button class="creator-tab" data-cat="accessory">Extras</button>
       </div>
-      <button id="save-profile-btn" class="primary-btn" disabled>Initialize Profile</button>
+      <div class="input-group" style="margin-top: 20px; ${isEdit ? 'display:none' : ''}">
+        <input type="text" id="hero-name" placeholder="Name your Hero..." value="${state.displayName || ''}" style="width: 100%; padding: 12px; border-radius: 12px; border: 2px solid #e5e5e5;">
+      </div>
+      <button id="finish-creator-btn" class="primary-btn" style="margin-top: 20px; width: 100%;">${isEdit ? 'Save Changes' : 'Complete Profile'}</button>
     </div>
   `;
-  
-  let selectedAvatar = null;
-  const nameInput = document.getElementById('display-name-input');
-  const saveBtn = document.getElementById('save-profile-btn');
-  
-  document.querySelectorAll('.avatar-option').forEach(opt => {
-    opt.onclick = () => {
-      document.querySelectorAll('.avatar-option').forEach(el => el.classList.remove('selected'));
-      opt.classList.add('selected');
-      selectedAvatar = opt.dataset.icon;
-      checkValidity();
+
+  const optionsGrid = document.getElementById('creator-options');
+  const nameInput = document.getElementById('hero-name');
+  const finishBtn = document.getElementById('finish-creator-btn');
+
+  function renderCategory(cat) {
+    optionsGrid.innerHTML = categories[cat].map(icon => `
+      <div class="card avatar-opt ${previewAvatar[cat] === icon ? 'selected' : ''}" data-icon="${icon}">
+        ${icon || '❌'}
+      </div>
+    `).join('');
+
+    document.querySelectorAll('.avatar-opt').forEach(opt => {
+      opt.onclick = () => {
+        previewAvatar[cat] = opt.dataset.icon;
+        updatePreview();
+        renderCategory(cat);
+      };
+    });
+  }
+
+  function updatePreview() {
+    // Update the real-time preview (the avatar in the character container)
+    Object.keys(previewAvatar).forEach(layer => {
+        const el = document.getElementById(`avatar-${layer}`);
+        if (el) el.textContent = previewAvatar[layer];
+    });
+  }
+
+  document.querySelectorAll('.creator-tab').forEach(tab => {
+    tab.onclick = () => {
+      document.querySelectorAll('.creator-tab').forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+      renderCategory(tab.dataset.cat);
     };
   });
-  
-  nameInput.oninput = () => checkValidity();
-  
-  function checkValidity() {
-    saveBtn.disabled = !(selectedAvatar && nameInput.value.trim().length > 2);
-  }
-  
-  saveBtn.onclick = async () => {
-    const profile = {
-      uid: auth.currentUser.uid,
-      displayName: nameInput.value.trim(),
-      avatar: selectedAvatar,
-      xp: 0,
-      gems: 0,
-      streak: 0,
-      joinedAt: new Date().toISOString()
-    };
-    await setDoc(doc(db, 'users', auth.currentUser.uid), profile);
-    state.displayName = profile.displayName;
-    state.avatar = profile.avatar;
+
+  renderCategory('base');
+
+  finishBtn.onclick = async () => {
+    const heroName = nameInput.value.trim();
+    if (!isEdit && heroName.length < 2) {
+      alert("Please give your hero a name!");
+      return;
+    }
+
+    if (!isEdit) {
+      state.displayName = heroName;
+      state.xp = 0;
+      state.gems = 0;
+      state.streak = 0;
+    }
+    
+    state.avatar = { ...previewAvatar };
+    saveState();
+
+    // Restore UI for the main app
+    document.querySelector('.header').style.display = 'flex';
+    document.querySelector('.bottom-nav').style.display = 'flex';
+    document.querySelector('.bottom-nav').classList.remove('hidden');
+
+    updateStats();
+    updateLayeredAvatar();
+    
+    // Always return home after edit/create for consistency and focus
     renderOnboardingStep1();
   };
 }
 
-function setupSettings() {
-    const modal = document.getElementById('settings-modal');
-    const btn = document.getElementById('settings-btn');
-    const closeBtn = document.getElementById('close-modal-btn');
-    const saveBtn = document.getElementById('save-key-btn');
-    const input = document.getElementById('api-key-input');
+function setupProfileModal() {
+    const modal = document.getElementById('profile-modal');
+    const btn = document.getElementById('profile-btn');
+    const closeBtn = document.getElementById('close-profile-btn');
+    const logoutBtn = document.getElementById('logout-btn');
+
+    const editBtn = document.getElementById('edit-char-btn');
 
     if (!modal || !btn) return;
 
     btn.addEventListener('click', () => {
-        input.value = localStorage.getItem('gemini_api_key') || '';
+        const isGuest = !state.user;
+        document.getElementById('modal-user-name').textContent = `👤 ${state.displayName || 'Learner'} ${isGuest ? '(Guest)' : ''}`;
+        document.getElementById('modal-user-email').textContent = isGuest ? 'Guest Session' : state.user.email;
+        document.getElementById('modal-user-avatar').textContent = state.avatar.base || '🤖';
+        document.getElementById('modal-xp').textContent = state.xp;
+        document.getElementById('modal-streak').textContent = state.streak;
+        document.getElementById('modal-gems').textContent = state.gems;
+        
         modal.style.display = 'flex';
     });
+
+    if (editBtn) {
+        editBtn.onclick = () => {
+            modal.style.display = 'none';
+            // Hide standard UI for full-screen editor
+            document.querySelector('.header').style.display = 'none';
+            document.querySelector('.bottom-nav').style.display = 'none';
+            renderFirstTimeOnboarding(true); 
+        };
+    }
 
     closeBtn.addEventListener('click', () => {
         modal.style.display = 'none';
     });
 
-    saveBtn.addEventListener('click', () => {
-        const newKey = input.value.trim();
-        localStorage.setItem('gemini_api_key', newKey);
-        modal.style.display = 'none';
-        updateStats(); // Update badge immediately
-        console.log("Gemini API Key saved:", newKey ? "PRESENT" : "EMPTY");
+    logoutBtn.addEventListener('click', () => {
+        signOut(auth).then(() => {
+            modal.style.display = 'none';
+            location.reload(); // Refresh to clear state
+        });
     });
     
     // Close on backdrop click
@@ -188,39 +534,87 @@ function setupSettings() {
 function updateCharacter(charId, message) {
   const char = characters[charId];
   state.activeChar = charId;
-  charImage.textContent = char.icon;
+  
+  // Update the base layer of the avatar with the character's icon
+  const baseLayer = document.getElementById('avatar-base');
+  if (baseLayer) {
+    baseLayer.textContent = char.icon;
+  }
+  
   charDialogue.textContent = message;
   document.body.className = char.theme;
 }
 
 // --- ONBOARDING ---
 function renderOnboardingStep1() {
-  updateCharacter('byte', "👋 I'm your AI tutor! I'll build 100% unique lessons for you in real-time. Pick a path!");
+  document.querySelector('.bottom-nav').classList.remove('hidden');
+  document.getElementById('back-btn').classList.add('hidden');
+  
+  // Header should be visible if user has ANY progress (XP or Gems) or is returning
+  if (state.track || state.xp > 0 || state.gems > 0) {
+    document.querySelector('.header').style.display = 'flex';
+  } else {
+    document.querySelector('.header').style.display = 'none';
+  }
+
+  if (!state.track && !state.user && !localStorage.getItem('cq_profile_v2')) {
+      renderLoginScreen();
+      return;
+  }
+
+  const hasHistory = state.track && state.language;
+  const continueBtn = hasHistory ? `
+    <div class="card continue-card" id="continue-journey-btn" style="grid-column: span 2; border-color: var(--color-primary); background: #f0fff0;">
+        <span class="card-icon">🚀</span>
+        <h3>Continue your journey</h3>
+        <p>Resume ${state.language} lessons</p>
+    </div>
+  ` : '';
+
+  updateCharacter('byte', hasHistory ? `Welcome back! Ready to continue your ${state.language} quest?` : "👋 I'm your AI tutor! I'll build 100% unique lessons for you in real-time. Pick a path!");
+  
   screenContainer.innerHTML = `
     <h1 class="screen-title">Choose your path</h1>
     <div class="selection-grid">
+      ${continueBtn}
       <div class="card" data-track="spoken">🌍 Language</div>
       <div class="card" data-track="programming">💻 Coding</div>
     </div>
   `;
-  document.querySelectorAll('.card').forEach(card => card.onclick = () => {
+
+  if (hasHistory) {
+      document.getElementById('continue-journey-btn').onclick = () => startLesson();
+  }
+
+  document.querySelectorAll('.card[data-track]').forEach(card => card.onclick = () => {
     state.track = card.dataset.track; renderOnboardingStep2();
   });
 }
 
 function renderOnboardingStep2() {
+  document.getElementById('back-btn').classList.remove('hidden');
   const langs = state.track === 'spoken' ? spokenLanguages : programmingLanguages;
   updateCharacter('nova', "Great! Which specific language should I generate lessons for?");
   screenContainer.innerHTML = `
+    <h1 class="screen-title">Select ${state.track === 'spoken' ? 'Language' : 'Coding'}</h1>
     <div class="selection-grid">
       ${langs.map(l => `<div class="card" data-lang="${l.id}">${l.icon} ${l.name}</div>`).join('')}
     </div>
   `;
-  document.querySelectorAll('.card').forEach(card => card.onclick = async () => {
+    document.querySelectorAll('.card').forEach(card => card.onclick = async () => {
     state.language = card.dataset.lang;
-    state.sessionInitialized = false; // Force new pool for new language/session
+    state.sessionInitialized = false; 
     state.sessionProgress = 0;
     state.sessionPool = [];
+    
+    // Save track/lang to Firestore for persistence
+    if (state.user) {
+        await setDoc(doc(db, 'users', state.user.uid), {
+            track: state.track,
+            language: state.language
+        }, { merge: true });
+    }
+    
     await startLesson();
   });
 }
@@ -228,6 +622,9 @@ function renderOnboardingStep2() {
 // --- REAL-TIME GENERATOR ---
 async function startLesson() {
   state.isGenerating = true;
+  document.querySelector('.bottom-nav').classList.add('hidden');
+  document.getElementById('back-btn').classList.remove('hidden');
+
   updateCharacter('byte', "Loading next challenge... 🧠");
 
   // Only initialize ONCE per session
@@ -326,28 +723,28 @@ async function initializeSessionPool() {
 
     // --- Step 3: Replace local with AI-generated if enabled ---
     if (isAiEnabled()) {
-        updateCharacter('byte', "Calling Gemini for truly unique challenges... 🧠");
-        const aiPool = [];
+        updateCharacter('byte', "Calling Gemini for unique challenges... 🧠");
         const aiTargetCount = state.sessionTotal - freshHandcrafted.length;
+        
+        // Concurrent AI Generation
+        const aiPromises = Array.from({ length: aiTargetCount }).map(() => 
+            generateAiLesson(
+                state.track, state.language, state.difficulty,
+                new Set([...state.answeredQuestions]) // Simplified set for parallel
+            )
+        );
 
-        for (let i = 0; i < aiTargetCount; i++) {
-            try {
-                const aiLesson = await generateAiLesson(
-                    state.track, state.language, state.difficulty,
-                    new Set([...state.answeredQuestions, ...aiPool.map(x => x.id)])
-                );
-                if (aiLesson && aiLesson.id && !seenIds.has(aiLesson.id)) {
-                    aiPool.push(aiLesson);
-                    seenIds.add(aiLesson.id);
-                }
-            } catch (e) {
-                console.warn(`AI lesson ${i + 1} failed, will use local fallback`);
-            }
-        }
+        const results = await Promise.allSettled(aiPromises);
+        const aiPool = results
+            .filter(r => r.status === 'fulfilled' && r.value && r.value.id)
+            .map(r => r.value)
+            .filter(lesson => !seenIds.has(lesson.id));
+
+        aiPool.forEach(l => seenIds.add(l.id));
 
         // Merge: handcrafted + AI + local fallback for missing slots
         const localFallback = candidates.slice(0, Math.max(0, state.sessionTotal - freshHandcrafted.length - aiPool.length));
-        state.sessionPool = [...[...freshHandcrafted, ...aiPool, ...localFallback]].reverse();
+        state.sessionPool = [...freshHandcrafted, ...aiPool, ...localFallback].reverse();
     } else {
         // Local only: handcrafted + shuffled local candidates
         const localItems = candidates.slice(0, state.sessionTotal - freshHandcrafted.length);
@@ -367,40 +764,44 @@ function updateProgressBar() {
 
 
 function generateRealTimeChallenge() {
+  if (!state.language) {
+      console.warn("Language missing in state, defaulting to javascript/spanish");
+  }
+
   if (state.track === 'programming') {
-    const syntax = syntaxMap[state.language] || syntaxMap['python'];
+    const lang = state.language || 'javascript';
+    const syntax = syntaxMap[lang] || syntaxMap['python'];
     const types = Object.keys(syntax);
     const type = types[Math.floor(Math.random() * types.length)];
     
-    // Variety parameters
     const varNames = {
         python: ['user_list', 'data_stream', 'magic_num', 'result_set', 'config_dict'],
         javascript: ['elements', 'dataResponse', 'magicValue', 'results', 'appConfig'],
         cpp: ['myArray', 'inputVal', 'dataObject', 'result_ptr', 'setting']
     };
-    const langVars = varNames[state.language] || varNames['python'];
+    const langVars = varNames[lang] || varNames['python'];
     const varName = langVars[Math.floor(Math.random() * langVars.length)];
     const val = Math.floor(Math.random() * 500);
     
     let code = syntax[type].replace('name', varName).replace('x', val);
-    if (state.language === 'python') {
+    if (lang === 'python') {
         code = code.replace('Hello', 'Pythonic World').replace('items', varName);
-    } else if (state.language === 'javascript') {
+    } else if (lang === 'javascript') {
         code = code.replace('Hello', 'JS Scripting').replace('list', varName);
-    } else if (state.language === 'cpp') {
+    } else if (lang === 'cpp') {
         code = code.replace('Hello', 'System C++').replace('v', varName);
     }
 
     const decoys = ['Loop', 'Variable', 'Function', 'Print', 'Array', 'Vector', 'Pointer', 'Class', 'Semicolon', 'Import'].filter(d => d.toLowerCase() !== type);
     
     const challenges = [
-      `Analyze this **${state.language.toUpperCase()}** snippet:`,
-      `What is the purpose of this **${state.language}** code?`,
+      `Analyze this **${lang.toUpperCase()}** snippet:`,
+      `What is the purpose of this **${lang}** code?`,
       `Identify the feature being used here:`,
-      `How does **${state.language}** treat this line?`
+      `How does **${lang}** treat this line?`
     ];
 
-    const qId = `prog_${state.language}_${code}`;
+    const qId = `prog_${lang}_${code}`;
 
     const langExplanations = {
         python: `Python is known for its readability. This snippet uses **${type}** to keep things clean and efficient!`,
@@ -412,22 +813,23 @@ function generateRealTimeChallenge() {
       id: qId,
       type: 'quiz',
       character: 'byte',
-      title: `AI ${state.language.charAt(0).toUpperCase() + state.language.slice(1)} Lab`,
+      title: `AI ${lang.charAt(0).toUpperCase() + lang.slice(1)} Lab`,
       code: code,
       challenge: challenges[Math.floor(Math.random() * challenges.length)],
       options: [type.charAt(0).toUpperCase() + type.slice(1), ...decoys.sort(() => 0.5 - Math.random()).slice(0, 3)].sort(() => 0.5 - Math.random()),
       answer: type.charAt(0).toUpperCase() + type.slice(1),
-      explanation: langExplanations[state.language] || `In coding, \`${code}\` is a standard way to perform a **${type}** operation.`
+      explanation: langExplanations[lang] || `In coding, \`${code}\` is a standard way to perform a **${type}** operation.`
     };
   } else {
-    const bank = wordBank[state.language] || wordBank['spanish'];
+    const lang = state.language || 'spanish';
+    const bank = wordBank[lang] || wordBank['spanish'];
     const categories = Object.keys(bank);
     const cat = categories[Math.floor(Math.random() * categories.length)];
     const item = bank[cat][Math.floor(Math.random() * bank[cat].length)];
     
     if (cat === 'phrases' && item.chips) {
         return {
-            id: `phrase_${state.language}_${item.word}`,
+            id: `phrase_${lang}_${item.word}`,
             type: 'sentence',
             character: 'lingo',
             title: 'Sentence Builder',
@@ -442,12 +844,12 @@ function generateRealTimeChallenge() {
     const allWords = Object.values(bank).flat().map(i => i.word);
     const decoys = allWords.filter(w => w !== item.word);
 
-    const qId = `spoken_${state.language}_${item.word}`;
+    const qId = `spoken_${lang}_${item.word}`;
 
     const challengeTemplates = [
       `Choose the correct word for "${item.translation}":`,
       `How do you say "${item.translation}"?`,
-      `Translate "${item.translation}" to ${state.language}:`,
+      `Translate "${item.translation}" to ${lang}:`,
       `Pick the "${item.translation}" equivalent:`
     ];
 
@@ -566,22 +968,27 @@ function renderQuizScreen(lesson) {
 function checkAnswer(lesson) {
   const isCorrect = state.selectedOption === lesson.answer;
   if (isCorrect) {
-    audio.correct.play().catch(() => { }); // Play success sound
-    state.xp += 15; state.streak += 1; state.gems += 5;
-    saveProgress();
-    state.answeredQuestions.add(state.currentQuestionId); // Mark as used
+    audio.correct.play().catch(() => { });
+    state.xp += 15; 
+    state.streak += 1; 
+    state.gems += 5;
+    
+    saveState();
+    state.answeredQuestions.add(state.currentQuestionId);
     showFeedback(true, "AI confirmed: Perfect! Move to next world.");
 
-    // Auto-next for correct answer after a short joy delay
     setTimeout(async () => {
       feedbackLayer.classList.remove('show');
-      state.sessionProgress++; // IMPORTANT: Increment progress here!
-      await startLesson();
-    }, 1200);
+      state.sessionProgress++;
+      // Don't await startLesson here to make UI feel snappier
+      startLesson();
+    }, 600); // Reduced delay for faster flow
 
   } else {
-    audio.wrong.play().catch(() => { }); // Play error sound
+    audio.wrong.play().catch(() => { });
     state.streak = 0;
+    saveState();
+    
     showFeedback(false, lesson.explanation);
   }
   updateStats();
@@ -625,16 +1032,12 @@ function updateStats() {
 
   const aiBadge = document.getElementById('ai-status');
   if (aiBadge) {
-    const enabled = isAiEnabled();
-    aiBadge.textContent = enabled ? 'Gemini AI' : 'Local AI';
-    aiBadge.classList.toggle('active', enabled);
+    aiBadge.style.display = 'none'; // Hidden from users as requested
   }
 }
 
 function saveProgress() {
-    localStorage.setItem('cq_xp', state.xp);
-    localStorage.setItem('cq_streak', state.streak);
-    localStorage.setItem('cq_gems', state.gems);
+    saveState();
 }
 
 function completeSession() {
@@ -653,14 +1056,24 @@ function completeSession() {
   `;
   state.xp += 50;
   state.gems += 25;
+  
   saveProgress();
+  
+  if (state.user) {
+      setDoc(doc(db, 'users', state.user.uid), {
+          xp: state.xp,
+          gems: state.gems,
+          streak: state.streak
+      }, { merge: true }).catch(err => console.error("Firestore sync failed:", err));
+  }
+  
   updateStats();
   
   document.getElementById('finish-btn').onclick = () => {
     state.sessionProgress = 0;
     state.sessionPool = [];
-    state.sessionInitialized = false; // Allow re-init for next session
-    state.answeredQuestions = new Set(); // New session = fresh start
+    state.sessionInitialized = false; 
+    state.answeredQuestions = new Set(); 
     renderOnboardingStep1();
   };
 }
