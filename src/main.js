@@ -1,5 +1,8 @@
 import { characters, spokenLanguages, programmingLanguages, lessons, wordBank, syntaxMap } from './data/lessons.js'
 import { isAiEnabled, generateAiLesson } from './services/aiService.js'
+import { auth, db, googleProvider, githubProvider } from './services/firebase.js'
+import { onAuthStateChanged, signInWithPopup, signOut } from 'firebase/auth'
+import { doc, getDoc, setDoc } from 'firebase/firestore'
 
 // --- Audio ---
 const audio = {
@@ -40,7 +43,114 @@ const streakDisplay = document.getElementById('streak-count');
 function init() {
   updateStats();
   setupSettings();
-  renderOnboardingStep1();
+  
+  onAuthStateChanged(auth, async (user) => {
+    if (user) {
+      state.user = user;
+      await loadUserProfile(user.uid);
+    } else {
+      state.user = null;
+      renderLoginScreen();
+    }
+  });
+}
+
+async function loadUserProfile(uid) {
+  const docRef = doc(db, 'users', uid);
+  const docSnap = await getDoc(docRef);
+  
+  if (docSnap.exists()) {
+    const data = docSnap.data();
+    state.xp = data.xp || 0;
+    state.gems = data.gems || 0;
+    state.streak = data.streak || 0;
+    state.displayName = data.displayName || 'Hero';
+    state.avatar = data.avatar || '🤖';
+    
+    updateStats();
+    renderOnboardingStep1(); // Or dashboard if already onboarded
+  } else {
+    renderFirstTimeOnboarding();
+  }
+}
+
+function renderLoginScreen() {
+  updateCharacter('byte', "Welcome back, Pioneer! Log in to sync your progress across the multiverse.");
+  screenContainer.innerHTML = `
+    <div class="login-screen">
+      <h1 class="screen-title">Quest Begins Here</h1>
+      <div class="auth-methods">
+        <button id="google-login-btn" class="primary-btn google-btn">
+          <span class="btn-icon">🌐</span> Sign in with Google
+        </button>
+        <button id="github-login-btn" class="primary-btn github-btn">
+          <span class="btn-icon">🐙</span> Sign in with GitHub
+        </button>
+      </div>
+      <p class="guest-note">Or <a href="#" id="guest-login-btn">Continue as Guest</a></p>
+    </div>
+  `;
+  
+  document.getElementById('google-login-btn').onclick = () => signInWithPopup(auth, googleProvider);
+  document.getElementById('github-login-btn').onclick = () => signInWithPopup(auth, githubProvider);
+  document.getElementById('guest-login-btn').onclick = (e) => {
+    e.preventDefault();
+    renderOnboardingStep1();
+  };
+}
+
+function renderFirstTimeOnboarding() {
+  updateCharacter('nova', "Greetings, Recruit! Let's set up your profile for the journey ahead.");
+  screenContainer.innerHTML = `
+    <div class="onboarding-flow">
+      <h2>Step 1: Choose Your Avatar</h2>
+      <div class="avatar-grid">
+        ${['🤖', '🦊', '👾', '🦜', '🌟', '🧙', '🐱', '🐶', '🦄', '🐲'].map(icon => `
+          <div class="avatar-option" data-icon="${icon}">${icon}</div>
+        `).join('')}
+      </div>
+      <div class="input-group">
+        <label>Display Name</label>
+        <input type="text" id="display-name-input" placeholder="Enter your hero name">
+      </div>
+      <button id="save-profile-btn" class="primary-btn" disabled>Initialize Profile</button>
+    </div>
+  `;
+  
+  let selectedAvatar = null;
+  const nameInput = document.getElementById('display-name-input');
+  const saveBtn = document.getElementById('save-profile-btn');
+  
+  document.querySelectorAll('.avatar-option').forEach(opt => {
+    opt.onclick = () => {
+      document.querySelectorAll('.avatar-option').forEach(el => el.classList.remove('selected'));
+      opt.classList.add('selected');
+      selectedAvatar = opt.dataset.icon;
+      checkValidity();
+    };
+  });
+  
+  nameInput.oninput = () => checkValidity();
+  
+  function checkValidity() {
+    saveBtn.disabled = !(selectedAvatar && nameInput.value.trim().length > 2);
+  }
+  
+  saveBtn.onclick = async () => {
+    const profile = {
+      uid: auth.currentUser.uid,
+      displayName: nameInput.value.trim(),
+      avatar: selectedAvatar,
+      xp: 0,
+      gems: 0,
+      streak: 0,
+      joinedAt: new Date().toISOString()
+    };
+    await setDoc(doc(db, 'users', auth.currentUser.uid), profile);
+    state.displayName = profile.displayName;
+    state.avatar = profile.avatar;
+    renderOnboardingStep1();
+  };
 }
 
 function setupSettings() {

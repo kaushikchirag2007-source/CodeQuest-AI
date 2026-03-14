@@ -647,3 +647,113 @@ body {
     --color-primary: #1cb0f6;
     --color-primary-dark: #1899d6;
 }
+
+/* Auth & Onboarding Styling */
+.login-screen, .onboarding-flow {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 40px 20px;
+    text-align: center;
+    animation: slideUp 0.6s cubic-bezier(0.18, 0.89, 0.32, 1.28);
+}
+
+.auth-methods {
+    width: 100%;
+    max-width: 320px;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    margin: 30px 0;
+}
+
+.google-btn {
+    background: white !important;
+    color: #444 !important;
+    border: 2px solid #e5e5e5 !important;
+    box-shadow: 0 4px 0 #e5e5e5 !important;
+}
+
+.github-btn {
+    background: #333 !important;
+    box-shadow: 0 4px 0 #111 !important;
+}
+
+.guest-note {
+    font-size: 0.9rem;
+    color: var(--color-text-light);
+}
+
+.guest-note a {
+    color: var(--color-secondary);
+    font-weight: 700;
+    text-decoration: none;
+}
+
+.avatar-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 12px;
+    margin: 30px 0;
+}
+
+.avatar-option {
+    font-size: 2.5rem;
+    padding: 10px;
+    background: #f7f7f7;
+    border: 2px solid #e5e5e5;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.avatar-option:hover {
+    background: white;
+    transform: scale(1.1);
+}
+
+.avatar-option.selected {
+    border-color: var(--color-secondary);
+    background: #ddf4ff;
+    box-shadow: 0 0 15px rgba(28, 176, 246, 0.3);
+}
+
+.input-group {
+    width: 100%;
+    max-width: 320px;
+    text-align: left;
+    margin-bottom: 30px;
+}
+
+.input-group label {
+    display: block;
+    font-weight: 700;
+    margin-bottom: 8px;
+    color: var(--color-text);
+}
+
+.input-group input {
+    width: 100%;
+    padding: 15px;
+    border: 2px solid #e5e5e5;
+    border-radius: 12px;
+    font-size: 1rem;
+    font-family: inherit;
+    transition: border-color 0.2s;
+}
+
+.input-group input:focus {
+    outline: none;
+    border-color: var(--color-secondary);
+}
+
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
