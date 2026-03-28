@@ -13,6 +13,6 @@
     },
     "dependencies": {
         "@google/generative-ai": "^0.24.1",
-        "firebase": "^12.10.0"
+        "@supabase/supabase-js": "^2.100.0"
     }
 }
