@@ -1,39 +1,52 @@
-import './style.css'
+import React from 'react';
+import ReactDOM from 'react-dom/client';
+import App from './App.jsx';
+import './style.css';
 
-// --- Mock Data ---
-const activity = [
-  { user: 'Student_42', action: 'Finished Python Intro', xp: '+10', time: '2m ago' },
-  { user: 'SkyWalker', action: 'Streak Day 7!', xp: '+15', time: '5m ago' },
-  { user: 'Beginner_Coder', action: 'Started Spanish', xp: '+5', time: '12m ago' },
-  { user: 'DevOps_Pro', action: 'Moderated Rust Content', xp: '-', time: '1h ago' },
-];
+class ErrorBoundary extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = { error: null };
+  }
 
-// --- Init ---
-function init() {
-  renderActivity();
-  setupNav();
+  static getDerivedStateFromError(error) {
+    return { error };
+  }
+
+  render() {
+    if (this.state.error) {
+      return React.createElement(
+        'div',
+        {
+          style: {
+            minHeight: '100vh',
+            padding: '24px',
+            fontFamily: 'Arial, sans-serif',
+            background: '#fff7f7',
+            color: '#7f1d1d'
+          }
+        },
+        React.createElement('h1', null, 'App failed to render'),
+        React.createElement(
+          'pre',
+          { style: { whiteSpace: 'pre-wrap', lineHeight: 1.5 } },
+          this.state.error?.stack || this.state.error?.message || 'Unknown render error'
+        )
+      );
+    }
+
+    return this.props.children;
+  }
 }
 
-function renderActivity() {
-  const tableBody = document.getElementById('activity-log-body');
-  tableBody.innerHTML = activity.map(log => `
-    <tr>
-      <td><strong>${log.user}</strong></td>
-      <td>${log.action}</td>
-      <td style="color:#58cc02; font-weight:700">${log.xp}</td>
-      <td>${log.time}</td>
-    </tr>
-  `).join('');
-}
-
-function setupNav() {
-  document.querySelectorAll('.nav-links li').forEach(li => {
-    li.onclick = () => {
-      document.querySelectorAll('.nav-links li').forEach(el => el.classList.remove('active'));
-      li.classList.add('active');
-      alert(`Navigation to ${li.dataset.page} is locked for security! This is a demo.`);
-    };
-  });
-}
-
-init();
+ReactDOM.createRoot(document.getElementById('app')).render(
+  React.createElement(
+    React.StrictMode,
+    null,
+    React.createElement(
+      ErrorBoundary,
+      null,
+      React.createElement(App)
+    )
+  )
+);
