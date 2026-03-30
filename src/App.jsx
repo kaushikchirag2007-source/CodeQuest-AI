@@ -1,516 +1,678 @@
-import React, { useEffect, useState } from 'react';
+import React, { useMemo, useState } from 'react';
 
-const profile = {
+const navItems = [
+  { id: 'home', label: 'Home', icon: HomeIcon },
+  { id: 'courses', label: 'Courses', icon: CourseIcon },
+  { id: 'tests', label: 'Tests', icon: TestIcon },
+  { id: 'bookmarks', label: 'Bookmarks', icon: BookmarkIcon },
+  { id: 'scoreboard', label: 'Scoreboard', icon: TrophyIcon },
+  { id: 'settings', label: 'Settings', icon: SettingsIcon },
+  { id: 'profile', label: 'Profile', icon: AvatarIcon, avatar: true }
+];
+
+const user = {
   name: 'Avery Chen',
-  level: 'Level 12',
-  xp: '2,480 XP',
-  avatar: 'AC'
+  email: 'avery.chen@codequest.ai',
+  password: '••••••••••••',
+  phone: '+1 (415) 555-0144',
+  memberSince: 'March 2024',
+  avatar: 'AC',
+  xp: '18,420',
+  streak: 19,
+  lessonsDone: 214,
+  testsPassed: 37,
+  rank: '#12'
 };
 
-const lessonsInProgress = [
-  { title: 'Spanish Conversation', progress: 72 },
-  { title: 'JavaScript Basics', progress: 48 },
-  { title: 'French Pronunciation', progress: 21 }
+const activeCourses = [
+  { title: 'Advanced JavaScript', track: 'Coding', progress: 84 },
+  { title: 'Business English Fluency', track: 'Spoken', progress: 67 },
+  { title: 'React Patterns Lab', track: 'Coding', progress: 49 }
 ];
 
-const completedLessons = [
-  'Python Syntax Foundations',
-  'English Phrasal Verbs',
-  'HTML Essentials'
-];
-
-const learningPaths = [
+const courseCards = [
   {
     id: 'spoken',
+    eyebrow: 'Human fluency',
     title: 'Spoken Languages',
-    description: 'Practice real-world vocabulary, listening, and fluency.',
-    icon: GlobeIcon,
-    accent: 'from-sky-500/18 via-sky-500/8 to-transparent',
-    border: 'border-sky-200/80 dark:border-sky-400/20',
-    iconWrap: 'bg-sky-500 text-white shadow-[0_12px_24px_rgba(14,165,233,0.28)]'
+    description: 'Sharpen pronunciation, listening, and speaking confidence with scenario-based practice.',
+    stats: ['18 live drills', '6 saved paths']
   },
   {
     id: 'coding',
+    eyebrow: 'Builder fluency',
     title: 'Coding Languages',
-    description: 'Build syntax confidence with guided projects and practice.',
-    icon: TerminalIcon,
-    accent: 'from-emerald-500/18 via-emerald-500/8 to-transparent',
-    border: 'border-emerald-200/80 dark:border-emerald-400/20',
-    iconWrap: 'bg-emerald-500 text-white shadow-[0_12px_24px_rgba(16,185,129,0.28)]'
+    description: 'Move from syntax recall to project confidence with exercises, snippets, and timed practice.',
+    stats: ['24 active lessons', '11 challenge sets']
   }
 ];
 
-function App() {
-  const [isDark, setIsDark] = useState(false);
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+const quickActions = [
+  { label: 'Tests', count: '12 ready', icon: TestIcon },
+  { label: 'Saved Lessons', count: '28 saved', icon: CourseIcon },
+  { label: 'Saved Questions', count: '54 pinned', icon: BookmarkIcon }
+];
 
-  useEffect(() => {
-    const root = document.documentElement;
-    root.classList.toggle('dark', isDark);
-  }, [isDark]);
+const scoreboard = [
+  { name: 'Mina Park', score: 9820, trend: '+120' },
+  { name: 'Noah Patel', score: 9410, trend: '+95' },
+  { name: 'You', score: 9185, trend: '+142', highlight: true },
+  { name: 'Lina Costa', score: 9010, trend: '+88' },
+  { name: 'Arjun Mehta', score: 8840, trend: '+76' }
+];
+
+const bookmarks = [
+  { title: 'Closures in practice', tag: 'CODE', note: 'Saved from JavaScript mastery' },
+  { title: 'Spanish travel phrases', tag: 'SPOKEN', note: 'Ready for quick review' },
+  { title: 'Async patterns mock test', tag: 'TEST', note: '18 questions remaining' },
+  { title: 'Interview algorithms sheet', tag: 'CODE', note: 'Prioritized for this week' }
+];
+
+const weeklyBars = [
+  { day: 'Mon', value: 44 },
+  { day: 'Tue', value: 72 },
+  { day: 'Wed', value: 58 },
+  { day: 'Thu', value: 83 },
+  { day: 'Fri', value: 64 },
+  { day: 'Sat', value: 91 },
+  { day: 'Sun', value: 76 }
+];
+
+const settingsData = {
+  fontSize: 'Comfortable',
+  accent: 'Amber / Teal',
+  privacy: 'Friends only',
+  language: 'English (US)'
+};
+
+function App() {
+  const [activeRail, setActiveRail] = useState('home');
+  const [sidebarTab, setSidebarTab] = useState('profile');
+  const [darkMode, setDarkMode] = useState(true);
+  const [dailyReminders, setDailyReminders] = useState(true);
+  const [achievements, setAchievements] = useState(true);
+  const [weeklyDigest, setWeeklyDigest] = useState(false);
+
+  const activePanel = activeRail === 'settings' ? 'settings' : activeRail === 'profile' ? 'profile' : sidebarTab;
+
+  const notificationCount = useMemo(
+    () => [dailyReminders, achievements, weeklyDigest].filter(Boolean).length + 2,
+    [dailyReminders, achievements, weeklyDigest]
+  );
 
   return (
-    <div className="min-h-screen">
-      <div className="mx-auto flex min-h-screen max-w-[1600px]">
-        <Sidebar
-          isOpen={isSidebarOpen}
-          isCollapsed={isSidebarCollapsed}
-          isDark={isDark}
-          onClose={() => setIsSidebarOpen(false)}
-          onToggleTheme={() => setIsDark((value) => !value)}
-        />
+    <div className={darkMode ? 'dark' : ''}>
+      <div className="app-shell">
+        <div className="app-noise" aria-hidden="true" />
 
-        <div className="flex min-w-0 flex-1 flex-col">
-          <Header
-            profile={profile}
-            isDark={isDark}
-            onMenuClick={() => setIsSidebarOpen(true)}
-            onToggleTheme={() => setIsDark((value) => !value)}
-            onToggleSidebar={() => setIsSidebarCollapsed((value) => !value)}
+        <div className="dashboard-layout">
+          <IconRail
+            activeRail={activeRail}
+            onSelect={(id) => {
+              setActiveRail(id);
+              if (id === 'profile' || id === 'settings') {
+                setSidebarTab(id);
+              }
+            }}
           />
 
-          <main className="flex flex-1 items-center justify-center px-4 pb-8 pt-4 sm:px-6 lg:px-8 lg:pb-10">
-            <section className="w-full max-w-5xl">
-              <div className="glass-panel soft-shadow overflow-hidden rounded-[2rem]">
-                <div className="grid gap-8 px-6 py-8 sm:px-8 sm:py-10 lg:grid-cols-[1.1fr_0.9fr] lg:px-10 lg:py-12">
-                  <div className="flex flex-col justify-center">
-                    <span className="inline-flex w-fit items-center gap-2 rounded-full border border-brand-200 bg-brand-50 px-3 py-1 text-xs font-semibold tracking-[0.18em] text-brand-700 uppercase dark:border-brand-400/20 dark:bg-brand-500/10 dark:text-brand-100">
-                      Learn Better
-                    </span>
-                    <h1 className="mt-5 max-w-xl text-4xl font-extrabold tracking-tight text-ink-900 sm:text-5xl dark:text-white">
-                      What do you want to learn today?
-                    </h1>
-                    <p className="mt-4 max-w-lg text-base leading-7 text-ink-500 dark:text-slate-300">
-                      Pick a path and jump straight into a focused, distraction-free learning session.
-                    </p>
+          <main className="content-column">
+            <TopBar
+              name={user.name}
+              streak={user.streak}
+              notificationCount={notificationCount}
+            />
 
-                    <div className="mt-8 grid gap-4 sm:grid-cols-2">
-                      {learningPaths.map((path) => (
-                        <LearningCard key={path.id} path={path} />
-                      ))}
-                    </div>
-                  </div>
+            <section className="hero-grid">
+              {courseCards.map((card, index) => (
+                <CourseCard key={card.id} card={card} index={index} />
+              ))}
+            </section>
 
-                  <div className="relative">
-                    <div className="absolute inset-x-10 top-0 h-28 rounded-full bg-brand-500/10 blur-3xl dark:bg-brand-400/10" />
-                    <div className="glass-panel soft-shadow relative rounded-[1.75rem] p-5 sm:p-6">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <p className="text-xs font-semibold tracking-[0.2em] text-ink-400 uppercase dark:text-slate-400">
-                            Profile
-                          </p>
-                          <h2 className="mt-2 text-lg font-bold text-ink-900 dark:text-white">
-                            Daily momentum
-                          </h2>
-                        </div>
-                        <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-ink-900 text-sm font-bold text-white dark:bg-white dark:text-ink-900">
-                          {profile.avatar}
-                        </div>
-                      </div>
+            <section className="quick-actions">
+              {quickActions.map((action) => (
+                <QuickActionCard key={action.label} action={action} />
+              ))}
+            </section>
 
-                      <div className="mt-5 rounded-3xl bg-ink-900 px-5 py-4 text-white dark:bg-white dark:text-ink-900">
-                        <p className="text-sm text-white/70 dark:text-ink-500">{profile.name}</p>
-                        <div className="mt-2 flex items-end justify-between gap-4">
-                          <div>
-                            <p className="text-2xl font-extrabold">{profile.level}</p>
-                            <p className="text-sm text-white/70 dark:text-ink-500">{profile.xp}</p>
-                          </div>
-                          <span className="rounded-full bg-white/12 px-3 py-1 text-xs font-semibold dark:bg-ink-900/8">
-                            5 day streak
-                          </span>
-                        </div>
-                      </div>
-
-                      <div className="mt-6 space-y-4">
-                        <section>
-                          <div className="mb-3 flex items-center justify-between">
-                            <h3 className="text-sm font-semibold text-ink-900 dark:text-white">
-                              Lessons In Progress
-                            </h3>
-                            <span className="text-xs text-ink-400 dark:text-slate-400">03</span>
-                          </div>
-                          <div className="space-y-3">
-                            {lessonsInProgress.map((lesson) => (
-                              <div key={lesson.title} className="rounded-2xl border border-ink-200/80 bg-ink-50 p-3 dark:border-white/8 dark:bg-white/5">
-                                <div className="mb-2 flex items-center justify-between gap-3">
-                                  <span className="text-sm font-medium text-ink-700 dark:text-slate-200">
-                                    {lesson.title}
-                                  </span>
-                                  <span className="text-xs text-ink-400 dark:text-slate-400">
-                                    {lesson.progress}%
-                                  </span>
-                                </div>
-                                <div className="h-2 rounded-full bg-ink-200 dark:bg-white/10">
-                                  <div
-                                    className="h-2 rounded-full bg-brand-500 transition-all duration-500"
-                                    style={{ width: `${lesson.progress}%` }}
-                                  />
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                        </section>
-
-                        <section>
-                          <div className="mb-3 flex items-center justify-between">
-                            <h3 className="text-sm font-semibold text-ink-900 dark:text-white">
-                              Completed Lessons
-                            </h3>
-                            <span className="text-xs text-ink-400 dark:text-slate-400">03</span>
-                          </div>
-                          <div className="space-y-2">
-                            {completedLessons.map((lesson) => (
-                              <div
-                                key={lesson}
-                                className="flex items-center gap-3 rounded-2xl border border-ink-200/80 bg-white px-3 py-3 dark:border-white/8 dark:bg-white/5"
-                              >
-                                <span className="flex h-8 w-8 items-center justify-center rounded-full bg-emerald-500/12 text-emerald-600 dark:bg-emerald-400/12 dark:text-emerald-300">
-                                  <CheckIcon />
-                                </span>
-                                <span className="text-sm text-ink-700 dark:text-slate-200">{lesson}</span>
-                              </div>
-                            ))}
-                          </div>
-                        </section>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
+            <section className="dashboard-grid">
+              <ScoreboardPanel />
+              <BookmarksPanel />
+              <ProgressPanel />
             </section>
           </main>
+
+          <SidebarPanel
+            activePanel={activePanel}
+            sidebarTab={sidebarTab}
+            setSidebarTab={setSidebarTab}
+            darkMode={darkMode}
+            setDarkMode={setDarkMode}
+            dailyReminders={dailyReminders}
+            setDailyReminders={setDailyReminders}
+            achievements={achievements}
+            setAchievements={setAchievements}
+            weeklyDigest={weeklyDigest}
+            setWeeklyDigest={setWeeklyDigest}
+          />
         </div>
       </div>
     </div>
   );
 }
 
-function Header({ profile, isDark, onMenuClick, onToggleTheme, onToggleSidebar }) {
+function IconRail({ activeRail, onSelect }) {
   return (
-    <header className="px-4 pt-4 sm:px-6 lg:px-8 lg:pt-6">
-      <div className="glass-panel soft-shadow flex items-center justify-between rounded-[1.5rem] px-4 py-3 sm:px-5">
-        <div className="flex items-center gap-3">
-          <button
-            type="button"
-            onClick={onMenuClick}
-            className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-ink-200 bg-white text-ink-700 transition hover:-translate-y-0.5 hover:border-brand-300 hover:text-brand-700 lg:hidden dark:border-white/10 dark:bg-white/5 dark:text-slate-200"
-            aria-label="Open menu"
-          >
-            <MenuIcon />
-          </button>
-          <button
-            type="button"
-            onClick={onToggleSidebar}
-            className="hidden h-11 w-11 items-center justify-center rounded-2xl border border-ink-200 bg-white text-ink-700 transition hover:-translate-y-0.5 hover:border-brand-300 hover:text-brand-700 lg:inline-flex dark:border-white/10 dark:bg-white/5 dark:text-slate-200"
-            aria-label="Collapse sidebar"
-          >
-            <PanelIcon />
-          </button>
-          <div className="flex items-center gap-3">
-            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-ink-900 text-white dark:bg-white dark:text-ink-900">
-              <SparkIcon />
-            </div>
-            <div>
-              <p className="text-lg font-extrabold tracking-tight text-ink-900 dark:text-white">
-                LinguaCode
-              </p>
-              <p className="text-sm text-ink-400 dark:text-slate-400">
-                Spoken + coding fluency
-              </p>
-            </div>
-          </div>
+    <aside className="icon-rail panel-surface">
+      <div className="rail-brand">
+        <div className="brand-mark">
+          <CompassIcon />
         </div>
+        <div>
+          <p className="rail-title">CodeQuest</p>
+          <p className="rail-subtitle">Editorial learning</p>
+        </div>
+      </div>
 
-        <div className="flex items-center gap-2 sm:gap-3">
-          <button
-            type="button"
-            onClick={onToggleTheme}
-            className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-ink-200 bg-white text-ink-700 transition hover:-translate-y-0.5 hover:border-brand-300 hover:text-brand-700 dark:border-white/10 dark:bg-white/5 dark:text-slate-200"
-            aria-label="Toggle theme"
-          >
-            {isDark ? <SunIcon /> : <MoonIcon />}
-          </button>
-          <button
-            type="button"
-            className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-ink-200 bg-white text-ink-700 transition hover:-translate-y-0.5 hover:border-brand-300 hover:text-brand-700 dark:border-white/10 dark:bg-white/5 dark:text-slate-200"
-            aria-label="Settings"
-          >
-            <SettingsIcon />
-          </button>
-          <button
-            type="button"
-            className="flex items-center gap-3 rounded-2xl border border-ink-200 bg-white px-3 py-2 transition hover:-translate-y-0.5 hover:border-brand-300 dark:border-white/10 dark:bg-white/5"
-            aria-label="User profile"
-          >
-            <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-brand-500 text-sm font-bold text-white">
-              {profile.avatar}
-            </div>
-            <div className="hidden text-left sm:block">
-              <p className="text-sm font-semibold text-ink-900 dark:text-white">{profile.name}</p>
-              <p className="text-xs text-ink-400 dark:text-slate-400">{profile.level}</p>
-            </div>
-          </button>
+      <nav className="rail-nav" aria-label="Primary">
+        {navItems.map((item) => {
+          const Icon = item.icon;
+          const isActive = activeRail === item.id;
+
+          return (
+            <button
+              key={item.id}
+              type="button"
+              className={`rail-button ${isActive ? 'active' : ''}`}
+              onClick={() => onSelect(item.id)}
+              aria-pressed={isActive}
+            >
+              <span className={`rail-icon ${item.avatar ? 'avatar-pill' : ''}`}>
+                {item.avatar ? user.avatar : <Icon />}
+              </span>
+              <span>{item.label}</span>
+            </button>
+          );
+        })}
+      </nav>
+    </aside>
+  );
+}
+
+function TopBar({ name, streak, notificationCount }) {
+  return (
+    <header className="topbar panel-surface">
+      <div>
+        <p className="eyebrow">Tuesday briefing</p>
+        <h1>Welcome back, {name.split(' ')[0]}.</h1>
+      </div>
+
+      <div className="topbar-actions">
+        <div className="streak-badge">
+          <FireIcon />
+          <span>{streak}-day streak</span>
         </div>
+        <button type="button" className="icon-chip" aria-label="Notifications">
+          <BellIcon />
+          <strong>{notificationCount}</strong>
+        </button>
       </div>
     </header>
   );
 }
 
-function Sidebar({ isOpen, isCollapsed, isDark, onClose, onToggleTheme }) {
+function CourseCard({ card, index }) {
   return (
-    <>
-      <div
-        className={`fixed inset-0 z-30 bg-ink-900/45 backdrop-blur-sm transition lg:hidden ${
-          isOpen ? 'pointer-events-auto opacity-100' : 'pointer-events-none opacity-0'
-        }`}
-        onClick={onClose}
-      />
+    <article className={`course-card panel-surface course-${card.id}`}>
+      <p className="eyebrow">{card.eyebrow}</p>
+      <h2>{card.title}</h2>
+      <p className="muted-copy">{card.description}</p>
 
-      <aside
-        className={`glass-panel soft-shadow fixed inset-y-4 left-4 z-40 flex w-[86vw] max-w-[320px] flex-col rounded-[2rem] px-4 py-5 transition duration-300 lg:sticky lg:inset-auto lg:m-4 lg:h-[calc(100vh-2rem)] lg:w-auto lg:max-w-none ${
-          isOpen ? 'translate-x-0' : '-translate-x-[115%] lg:translate-x-0'
-        } ${isCollapsed ? 'lg:w-[112px]' : 'lg:w-[320px]'}`}
-      >
-        <div className={`flex items-center ${isCollapsed ? 'justify-center' : 'justify-between'} gap-3`}>
-          <div className="flex items-center gap-3">
-            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-ink-900 text-white dark:bg-white dark:text-ink-900">
-              <SparkIcon />
-            </div>
-            {!isCollapsed && (
-              <div>
-                <p className="text-base font-extrabold text-ink-900 dark:text-white">LinguaCode</p>
-                <p className="text-sm text-ink-400 dark:text-slate-400">Your learning home</p>
-              </div>
-            )}
-          </div>
+      <div className="course-stats">
+        {card.stats.map((item) => (
+          <span key={item}>{item}</span>
+        ))}
+      </div>
 
-          <button
-            type="button"
-            onClick={onClose}
-            className="inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-ink-200 bg-white text-ink-700 lg:hidden dark:border-white/10 dark:bg-white/5 dark:text-slate-200"
-            aria-label="Close menu"
-          >
-            <CloseIcon />
-          </button>
-        </div>
-
-        <div className={`mt-6 rounded-[1.75rem] bg-ink-900 px-4 py-4 text-white dark:bg-white dark:text-ink-900 ${isCollapsed ? 'lg:px-3' : ''}`}>
-          <div className={`flex ${isCollapsed ? 'lg:flex-col lg:items-center' : 'items-center'} gap-3`}>
-            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/14 text-sm font-bold dark:bg-ink-900/8">
-              {profile.avatar}
-            </div>
-            {!isCollapsed && (
-              <div>
-                <p className="font-semibold">{profile.name}</p>
-                <p className="text-sm text-white/65 dark:text-ink-500">{profile.level}</p>
-              </div>
-            )}
-          </div>
-          {!isCollapsed && (
-            <p className="mt-4 rounded-2xl bg-white/10 px-3 py-2 text-sm dark:bg-ink-900/6">
-              {profile.xp}
-            </p>
-          )}
-        </div>
-
-        <div className="mt-6 space-y-5 overflow-y-auto pr-1">
-          <SidebarSection title="Lessons In Progress" collapsed={isCollapsed}>
-            {lessonsInProgress.map((lesson) => (
-              <div key={lesson.title} className="rounded-2xl border border-ink-200/80 bg-white p-3 dark:border-white/8 dark:bg-white/5">
-                <div className="mb-2 flex items-center justify-between gap-3">
-                  <span className="text-sm font-medium text-ink-700 dark:text-slate-200">
-                    {lesson.title}
-                  </span>
-                  <span className="text-xs text-ink-400 dark:text-slate-400">{lesson.progress}%</span>
-                </div>
-                <div className="h-2 rounded-full bg-ink-200 dark:bg-white/10">
-                  <div className="h-2 rounded-full bg-brand-500" style={{ width: `${lesson.progress}%` }} />
-                </div>
-              </div>
-            ))}
-          </SidebarSection>
-
-          <SidebarSection title="Completed Lessons" collapsed={isCollapsed}>
-            <div className="space-y-2">
-              {completedLessons.map((lesson) => (
-                <div key={lesson} className="flex items-center gap-3 rounded-2xl border border-ink-200/80 bg-white px-3 py-3 dark:border-white/8 dark:bg-white/5">
-                  <span className="flex h-8 w-8 items-center justify-center rounded-full bg-emerald-500/12 text-emerald-600 dark:bg-emerald-400/12 dark:text-emerald-300">
-                    <CheckIcon />
-                  </span>
-                  <span className="text-sm text-ink-700 dark:text-slate-200">{lesson}</span>
-                </div>
-              ))}
-            </div>
-          </SidebarSection>
-
-          <SidebarSection title="Preferences" collapsed={isCollapsed}>
-            <div className="space-y-2">
-              <SidebarAction icon={<SettingsIcon />} label="Settings" collapsed={isCollapsed} />
-              <SidebarAction
-                icon={isDark ? <SunIcon /> : <MoonIcon />}
-                label="Theme switcher"
-                collapsed={isCollapsed}
-                onClick={onToggleTheme}
-              />
-            </div>
-          </SidebarSection>
-        </div>
-      </aside>
-    </>
+      <button type="button" className="primary-link">
+        Explore track {index === 0 ? '01' : '02'}
+        <ArrowIcon />
+      </button>
+    </article>
   );
 }
 
-function SidebarSection({ title, collapsed, children }) {
-  return (
-    <section>
-      {!collapsed && (
-        <div className="mb-3 flex items-center justify-between">
-          <h2 className="text-xs font-semibold tracking-[0.18em] text-ink-400 uppercase dark:text-slate-400">
-            {title}
-          </h2>
-        </div>
-      )}
-      {collapsed ? (
-        <div className="flex justify-center">
-          <div className="h-2 w-2 rounded-full bg-brand-500" />
-        </div>
-      ) : (
-        children
-      )}
-    </section>
-  );
-}
+function QuickActionCard({ action }) {
+  const Icon = action.icon;
 
-function SidebarAction({ icon, label, collapsed, onClick }) {
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      className="flex w-full items-center gap-3 rounded-2xl border border-ink-200/80 bg-white px-3 py-3 text-left text-sm font-medium text-ink-700 transition hover:-translate-y-0.5 hover:border-brand-300 hover:text-brand-700 dark:border-white/8 dark:bg-white/5 dark:text-slate-200"
-    >
-      <span className="flex h-9 w-9 items-center justify-center rounded-2xl bg-ink-100 text-ink-700 dark:bg-white/10 dark:text-slate-100">
-        {icon}
+    <button type="button" className="quick-card panel-surface">
+      <span className="quick-icon">
+        <Icon />
       </span>
-      {!collapsed && <span>{label}</span>}
-    </button>
-  );
-}
-
-function LearningCard({ path }) {
-  const Icon = path.icon;
-
-  return (
-    <button
-      type="button"
-      className={`group relative overflow-hidden rounded-[1.75rem] border ${path.border} bg-white p-5 text-left transition duration-300 hover:-translate-y-1.5 hover:shadow-[0_22px_45px_rgba(15,23,42,0.12)] dark:bg-white/5 dark:hover:shadow-[0_24px_50px_rgba(2,8,23,0.42)]`}
-    >
-      <div className={`absolute inset-0 bg-gradient-to-br ${path.accent} opacity-90`} />
-      <div className="relative">
-        <div className={`mb-5 flex h-14 w-14 items-center justify-center rounded-2xl ${path.iconWrap}`}>
-          <Icon />
-        </div>
-        <h3 className="text-xl font-bold text-ink-900 dark:text-white">{path.title}</h3>
-        <p className="mt-2 max-w-xs text-sm leading-6 text-ink-500 dark:text-slate-300">
-          {path.description}
-        </p>
-        <div className="mt-6 flex items-center gap-2 text-sm font-semibold text-ink-700 transition group-hover:translate-x-1 dark:text-slate-200">
-          Start learning
-          <ArrowIcon />
-        </div>
+      <div>
+        <p>{action.label}</p>
+        <span>{action.count}</span>
       </div>
     </button>
   );
 }
 
-function SparkIcon() {
+function ScoreboardPanel() {
   return (
-    <svg viewBox="0 0 24 24" className="h-5 w-5 fill-current" aria-hidden="true">
-      <path d="M12 2 9.6 8.6 3 11l6.6 2.4L12 20l2.4-6.6L21 11l-6.6-2.4z" />
+    <section className="scoreboard panel-surface">
+      <div className="section-head">
+        <div>
+          <p className="eyebrow">Competitive pulse</p>
+          <h3>Weekly scoreboard</h3>
+        </div>
+        <span className="section-chip">Top 20%</span>
+      </div>
+
+      <div className="score-list">
+        {scoreboard.map((entry, index) => (
+          <div key={entry.name} className={`score-row ${entry.highlight ? 'is-you' : ''}`}>
+            <div className="score-meta">
+              <span className="score-rank">0{index + 1}</span>
+              <div>
+                <p>{entry.name}</p>
+                <span>{entry.trend} this week</span>
+              </div>
+            </div>
+            <strong>{entry.score.toLocaleString()}</strong>
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function BookmarksPanel() {
+  return (
+    <section className="bookmarks panel-surface">
+      <div className="section-head">
+        <div>
+          <p className="eyebrow">Keep close</p>
+          <h3>Bookmarks</h3>
+        </div>
+        <span className="section-chip">12 total</span>
+      </div>
+
+      <div className="bookmark-list">
+        {bookmarks.map((item) => (
+          <article key={item.title} className="bookmark-item">
+            <span className={`tag tag-${item.tag.toLowerCase()}`}>{item.tag}</span>
+            <h4>{item.title}</h4>
+            <p>{item.note}</p>
+          </article>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function ProgressPanel() {
+  return (
+    <section className="progress panel-surface">
+      <div className="section-head">
+        <div>
+          <p className="eyebrow">Progress report</p>
+          <h3>Weekly learning rhythm</h3>
+        </div>
+        <span className="section-chip">Updated today</span>
+      </div>
+
+      <div className="stat-grid">
+        <StatCard label="Study hours" value="16.4" tone="amber" />
+        <StatCard label="Accuracy" value="92%" tone="teal" />
+        <StatCard label="XP gained" value="+1,280" tone="neutral" />
+      </div>
+
+      <div className="chart-card">
+        <div className="chart-bars">
+          {weeklyBars.map((bar, index) => (
+            <div key={bar.day} className="chart-column">
+              <div
+                className="chart-bar"
+                style={{
+                  height: `${bar.value}%`,
+                  animationDelay: `${index * 90}ms`
+                }}
+              />
+              <span>{bar.day}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function StatCard({ label, value, tone }) {
+  return (
+    <div className={`stat-card stat-${tone}`}>
+      <span>{label}</span>
+      <strong>{value}</strong>
+    </div>
+  );
+}
+
+function SidebarPanel({
+  activePanel,
+  sidebarTab,
+  setSidebarTab,
+  darkMode,
+  setDarkMode,
+  dailyReminders,
+  setDailyReminders,
+  achievements,
+  setAchievements,
+  weeklyDigest,
+  setWeeklyDigest
+}) {
+  return (
+    <aside className="sidebar panel-surface">
+      <div className="sidebar-tabs">
+        <button
+          type="button"
+          className={sidebarTab === 'profile' ? 'active' : ''}
+          onClick={() => setSidebarTab('profile')}
+        >
+          Profile
+        </button>
+        <button
+          type="button"
+          className={sidebarTab === 'settings' ? 'active' : ''}
+          onClick={() => setSidebarTab('settings')}
+        >
+          Settings
+        </button>
+      </div>
+
+      {activePanel === 'settings' ? (
+        <SettingsPanel
+          darkMode={darkMode}
+          setDarkMode={setDarkMode}
+          dailyReminders={dailyReminders}
+          setDailyReminders={setDailyReminders}
+          achievements={achievements}
+          setAchievements={setAchievements}
+          weeklyDigest={weeklyDigest}
+          setWeeklyDigest={setWeeklyDigest}
+        />
+      ) : (
+        <ProfilePanel />
+      )}
+    </aside>
+  );
+}
+
+function ProfilePanel() {
+  return (
+    <div className="sidebar-scroll">
+      <section className="profile-hero">
+        <div className="profile-avatar-wrap">
+          <div className="profile-avatar">{user.avatar}</div>
+          <button type="button" className="avatar-edit">
+            <EditIcon />
+          </button>
+        </div>
+        <div>
+          <p className="eyebrow">Profile tab</p>
+          <h2>{user.name}</h2>
+        </div>
+      </section>
+
+      <section className="detail-list">
+        <DetailRow label="Username" value="@averycodes" />
+        <DetailRow label="Email" value={user.email} />
+        <DetailRow label="Password" value={user.password} />
+        <DetailRow label="Phone" value={user.phone} />
+        <DetailRow label="Member since" value={user.memberSince} />
+      </section>
+
+      <section className="metric-grid">
+        <MetricCard label="XP" value={user.xp} />
+        <MetricCard label="Streak" value={`${user.streak} days`} />
+        <MetricCard label="Lessons done" value={String(user.lessonsDone)} />
+        <MetricCard label="Tests passed" value={String(user.testsPassed)} />
+        <MetricCard label="Rank" value={user.rank} />
+      </section>
+
+      <section className="course-progress-block">
+        <div className="section-head compact">
+          <div>
+            <p className="eyebrow">In motion</p>
+            <h3>Active courses</h3>
+          </div>
+        </div>
+
+        <div className="course-progress-list">
+          {activeCourses.map((course, index) => (
+            <div key={course.title} className="course-progress-card">
+              <div className="course-progress-head">
+                <div>
+                  <h4>{course.title}</h4>
+                  <span>{course.track}</span>
+                </div>
+                <strong>{course.progress}%</strong>
+              </div>
+              <div className="progress-track">
+                <div
+                  className="progress-fill"
+                  style={{
+                    width: `${course.progress}%`,
+                    animationDelay: `${index * 120}ms`
+                  }}
+                />
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+    </div>
+  );
+}
+
+function SettingsPanel({
+  darkMode,
+  setDarkMode,
+  dailyReminders,
+  setDailyReminders,
+  achievements,
+  setAchievements,
+  weeklyDigest,
+  setWeeklyDigest
+}) {
+  return (
+    <div className="sidebar-scroll">
+      <section>
+        <p className="eyebrow">Settings tab</p>
+        <h2 className="sidebar-title">Refine your workspace</h2>
+      </section>
+
+      <section className="settings-group">
+        <SettingRow
+          label="Dark mode"
+          value={darkMode ? 'On' : 'Off'}
+          control={<Toggle checked={darkMode} onChange={setDarkMode} />}
+        />
+        <SettingRow label="Font size" value={settingsData.fontSize} />
+        <SettingRow label="Accent color" value={settingsData.accent} />
+      </section>
+
+      <section className="settings-group">
+        <h3>Notifications</h3>
+        <SettingRow
+          label="Daily reminders"
+          value={dailyReminders ? 'Enabled' : 'Disabled'}
+          control={<Toggle checked={dailyReminders} onChange={setDailyReminders} />}
+        />
+        <SettingRow
+          label="Achievements"
+          value={achievements ? 'Enabled' : 'Disabled'}
+          control={<Toggle checked={achievements} onChange={setAchievements} />}
+        />
+        <SettingRow
+          label="Weekly digest"
+          value={weeklyDigest ? 'Enabled' : 'Disabled'}
+          control={<Toggle checked={weeklyDigest} onChange={setWeeklyDigest} />}
+        />
+      </section>
+
+      <section className="settings-group">
+        <h3>Preferences</h3>
+        <SettingRow label="Privacy" value={settingsData.privacy} />
+        <SettingRow label="Language" value={settingsData.language} />
+      </section>
+
+      <section className="settings-links">
+        {['Help Centre', 'FAQs', 'Send Feedback', 'Sign Out'].map((label) => (
+          <button key={label} type="button" className="settings-link">
+            <span>{label}</span>
+            <ArrowIcon />
+          </button>
+        ))}
+      </section>
+    </div>
+  );
+}
+
+function DetailRow({ label, value }) {
+  return (
+    <div className="detail-row">
+      <span>{label}</span>
+      <strong>{value}</strong>
+    </div>
+  );
+}
+
+function MetricCard({ label, value }) {
+  return (
+    <div className="metric-card">
+      <span>{label}</span>
+      <strong>{value}</strong>
+    </div>
+  );
+}
+
+function SettingRow({ label, value, control }) {
+  return (
+    <div className="setting-row">
+      <div>
+        <p>{label}</p>
+        <span>{value}</span>
+      </div>
+      {control ?? <button type="button" className="ghost-chip">{value}</button>}
+    </div>
+  );
+}
+
+function Toggle({ checked, onChange }) {
+  return (
+    <button
+      type="button"
+      className={`toggle ${checked ? 'checked' : ''}`}
+      onClick={() => onChange((value) => !value)}
+      aria-pressed={checked}
+    >
+      <span />
+    </button>
+  );
+}
+
+function CompassIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M14.9 9.1 9.7 11.2 7.6 16.4l5.2-2.1 2.1-5.2ZM12 3.5a8.5 8.5 0 1 0 0 17 8.5 8.5 0 0 0 0-17Z" />
     </svg>
   );
 }
 
-function MenuIcon() {
+function HomeIcon() {
   return (
-    <svg viewBox="0 0 24 24" className="h-5 w-5 stroke-current" fill="none" strokeWidth="1.8" aria-hidden="true">
-      <path strokeLinecap="round" d="M4 7h16M4 12h16M4 17h16" />
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M4.5 10.8 12 4l7.5 6.8V20H4.5v-9.2Zm4 7.2h7v-5.2h-7V18Z" />
     </svg>
   );
 }
 
-function CloseIcon() {
+function CourseIcon() {
   return (
-    <svg viewBox="0 0 24 24" className="h-5 w-5 stroke-current" fill="none" strokeWidth="1.8" aria-hidden="true">
-      <path strokeLinecap="round" d="m6 6 12 12M18 6 6 18" />
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M4 6.5A2.5 2.5 0 0 1 6.5 4H20v14.5A1.5 1.5 0 0 1 18.5 20H7a3 3 0 0 1 0-6h11V6H6.5A.5.5 0 0 0 6 6.5V16H4V6.5Z" />
     </svg>
   );
 }
 
-function PanelIcon() {
+function TestIcon() {
   return (
-    <svg viewBox="0 0 24 24" className="h-5 w-5 stroke-current" fill="none" strokeWidth="1.8" aria-hidden="true">
-      <path strokeLinecap="round" d="M5 5h14v14H5zM10 5v14" />
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M7 3h10v3h2v3a5 5 0 0 1-3.5 4.8l-1.2.4V21h-4v-6.8l-1.2-.4A5 5 0 0 1 5 9V6h2V3Zm2 2v2h6V5H9Zm-2 4a3 3 0 0 0 2.1 2.9l2.9 1V19h.1v-6.1l2.9-1A3 3 0 0 0 17 9V8H7v1Z" />
+    </svg>
+  );
+}
+
+function BookmarkIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M6 4h12v16l-6-3.6L6 20V4Zm2 2v10.4l4-2.4 4 2.4V6H8Z" />
+    </svg>
+  );
+}
+
+function TrophyIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M7 4h10v2h3v1.5A4.5 4.5 0 0 1 16.2 12 5.1 5.1 0 0 1 13 14v3h3v3H8v-3h3v-3a5.1 5.1 0 0 1-3.2-2A4.5 4.5 0 0 1 4 7.5V6h3V4Zm10 4V6h-1v2a6.9 6.9 0 0 1-.2 1.6A2.5 2.5 0 0 0 17 8Zm-10 0a2.5 2.5 0 0 0 1.2 1.6A6.9 6.9 0 0 1 8 8V6H7v2Z" />
     </svg>
   );
 }
 
 function SettingsIcon() {
   return (
-    <svg viewBox="0 0 24 24" className="h-5 w-5 stroke-current" fill="none" strokeWidth="1.8" aria-hidden="true">
-      <path strokeLinecap="round" strokeLinejoin="round" d="M12 3v3m0 12v3m9-9h-3M6 12H3m15.36 6.36-2.12-2.12M7.76 7.76 5.64 5.64m12.72 0-2.12 2.12M7.76 16.24l-2.12 2.12" />
-      <circle cx="12" cy="12" r="3.5" />
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="m12 4 1 .2.7 2.1a6 6 0 0 1 1.6.9l2.1-.7.7.8-1 2a6.6 6.6 0 0 1 .3 1.7l1.9 1v1l-1.9 1a6.6 6.6 0 0 1-.3 1.7l1 2-.7.8-2.1-.7a6 6 0 0 1-1.6.9L13 20l-1 .2-1-.2-.7-2.1a6 6 0 0 1-1.6-.9l-2.1.7-.7-.8 1-2A6.6 6.6 0 0 1 6.6 13l-1.9-1v-1l1.9-1a6.6 6.6 0 0 1 .3-1.7l-1-2 .7-.8 2.1.7a6 6 0 0 1 1.6-.9L11 4.2 12 4Zm0 5a3 3 0 1 0 0 6 3 3 0 0 0 0-6Z" />
     </svg>
   );
 }
 
-function SunIcon() {
+function AvatarIcon() {
   return (
-    <svg viewBox="0 0 24 24" className="h-5 w-5 stroke-current" fill="none" strokeWidth="1.8" aria-hidden="true">
-      <circle cx="12" cy="12" r="4" />
-      <path strokeLinecap="round" d="M12 2.5v2.2M12 19.3v2.2M21.5 12h-2.2M4.7 12H2.5m15.72-6.78-1.56 1.56M7.34 16.66l-1.56 1.56m12.44 0-1.56-1.56M7.34 7.34 5.78 5.78" />
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M12 12a4 4 0 1 0-4-4 4 4 0 0 0 4 4Zm0 2c-4.1 0-7 2.1-7 5v1h14v-1c0-2.9-2.9-5-7-5Z" />
     </svg>
   );
 }
 
-function MoonIcon() {
+function FireIcon() {
   return (
-    <svg viewBox="0 0 24 24" className="h-5 w-5 fill-current" aria-hidden="true">
-      <path d="M20.2 14.1A8.5 8.5 0 0 1 9.9 3.8a8.9 8.9 0 1 0 10.3 10.3Z" />
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M13.5 2.5c.6 2.8-.5 4.6-2 6.2-1.4 1.5-2.9 3-2.9 5.2a3.4 3.4 0 0 0 6.8.4c0-1.5-.6-2.5-1.7-3.7 2.3.3 4.8 2.6 4.8 6a6.5 6.5 0 1 1-13 0c0-4.5 3.1-7.3 5.5-9.6 1.1-1 2.1-2.1 2.5-4.5Z" />
     </svg>
   );
 }
 
-function GlobeIcon() {
+function BellIcon() {
   return (
-    <svg viewBox="0 0 24 24" className="h-7 w-7 stroke-current" fill="none" strokeWidth="1.8" aria-hidden="true">
-      <circle cx="12" cy="12" r="9" />
-      <path strokeLinecap="round" d="M3.6 9h16.8M3.6 15h16.8M12 3c2.4 2.5 3.8 5.7 3.8 9s-1.4 6.5-3.8 9m0-18c-2.4 2.5-3.8 5.7-3.8 9s1.4 6.5 3.8 9" />
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M12 3a5 5 0 0 0-5 5v2.1c0 .8-.3 1.6-.8 2.2L4.6 14v1h14.8v-1l-1.6-1.7c-.5-.6-.8-1.4-.8-2.2V8a5 5 0 0 0-5-5Zm0 18a2.5 2.5 0 0 0 2.4-2h-4.8A2.5 2.5 0 0 0 12 21Z" />
     </svg>
   );
 }
 
-function TerminalIcon() {
+function EditIcon() {
   return (
-    <svg viewBox="0 0 24 24" className="h-7 w-7 stroke-current" fill="none" strokeWidth="1.8" aria-hidden="true">
-      <rect x="3" y="4" width="18" height="16" rx="3" />
-      <path strokeLinecap="round" strokeLinejoin="round" d="m8 10 3 2-3 2m5 1h3" />
-    </svg>
-  );
-}
-
-function CheckIcon() {
-  return (
-    <svg viewBox="0 0 24 24" className="h-4 w-4 stroke-current" fill="none" strokeWidth="2.4" aria-hidden="true">
-      <path strokeLinecap="round" strokeLinejoin="round" d="m5 13 4 4L19 7" />
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M16.7 3.3a2.3 2.3 0 0 1 3.3 3.3l-9.7 9.7-4.3 1 1-4.3 9.7-9.7Zm-8.8 11.4-.4 1.6 1.6-.4 8.9-8.9-1.2-1.2-8.9 8.9Z" />
     </svg>
   );
 }
 
 function ArrowIcon() {
   return (
-    <svg viewBox="0 0 24 24" className="h-4 w-4 stroke-current" fill="none" strokeWidth="2" aria-hidden="true">
-      <path strokeLinecap="round" strokeLinejoin="round" d="M5 12h14m-5-5 5 5-5 5" />
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M5 12h12.2l-4.1 4.1 1.4 1.4L21 11l-6.5-6.5-1.4 1.4 4.1 4.1H5v2Z" />
     </svg>
   );
 }
