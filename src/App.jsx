@@ -1,13 +1,13 @@
 import React, { useMemo, useState } from 'react';
 
 const navItems = [
-  { id: 'home', label: 'Home', icon: HomeIcon },
-  { id: 'courses', label: 'Courses', icon: CourseIcon },
-  { id: 'tests', label: 'Tests', icon: TestIcon },
-  { id: 'bookmarks', label: 'Bookmarks', icon: BookmarkIcon },
-  { id: 'scoreboard', label: 'Scoreboard', icon: TrophyIcon },
-  { id: 'settings', label: 'Settings', icon: SettingsIcon },
-  { id: 'profile', label: 'Profile', icon: AvatarIcon, avatar: true }
+  { id: 'home', label: 'Home', shortLabel: 'HM' },
+  { id: 'courses', label: 'Courses', shortLabel: 'CR' },
+  { id: 'tests', label: 'Tests', shortLabel: 'TS' },
+  { id: 'bookmarks', label: 'Bookmarks', shortLabel: 'BM' },
+  { id: 'scoreboard', label: 'Scoreboard', shortLabel: 'SB' },
+  { id: 'settings', label: 'Settings', shortLabel: 'ST' },
+  { id: 'profile', label: 'Profile', shortLabel: 'MH' }
 ];
 
 const user = {
@@ -126,22 +126,27 @@ function App() {
               notificationCount={notificationCount}
             />
 
-            <section className="hero-grid">
-              {courseCards.map((card, index) => (
-                <CourseCard key={card.id} card={card} index={index} />
-              ))}
-            </section>
-
-            <section className="quick-actions">
-              {quickActions.map((action) => (
-                <QuickActionCard key={action.label} action={action} />
-              ))}
-            </section>
-
             <section className="dashboard-grid">
-              <ScoreboardPanel />
-              <BookmarksPanel />
-              <ProgressPanel />
+              <div className="dashboard-main-column">
+                <section className="hero-grid">
+                  {courseCards.map((card, index) => (
+                    <CourseCard key={card.id} card={card} index={index} />
+                  ))}
+                </section>
+
+                <section className="quick-actions">
+                  {quickActions.map((action) => (
+                    <QuickActionCard key={action.label} action={action} />
+                  ))}
+                </section>
+
+                <ProgressPanel />
+              </div>
+
+              <div className="dashboard-side-column">
+                <ScoreboardPanel />
+                <BookmarksPanel />
+              </div>
             </section>
           </main>
 
@@ -187,8 +192,8 @@ function IconRail({ activeRail, onSelect }) {
 
       <nav className="rail-nav" aria-label="Primary">
         {navItems.map((item) => {
-          const Icon = item.icon;
           const isActive = activeRail === item.id;
+          const isProfile = item.id === 'profile';
 
           return (
             <button
@@ -198,9 +203,7 @@ function IconRail({ activeRail, onSelect }) {
               onClick={() => onSelect(item.id)}
               aria-pressed={isActive}
             >
-              <span className={`rail-icon ${item.avatar ? 'avatar-pill' : ''}`}>
-                {item.avatar ? user.avatar : <Icon />}
-              </span>
+              <span className={`rail-icon ${isProfile ? 'avatar-pill' : ''}`}>{item.shortLabel}</span>
               <span>{item.label}</span>
             </button>
           );
@@ -673,14 +676,6 @@ function CompassIcon() {
   );
 }
 
-function HomeIcon() {
-  return (
-    <svg viewBox="0 0 24 24" aria-hidden="true">
-      <path d="M4.5 10.8 12 4l7.5 6.8V20H4.5v-9.2Zm4 7.2h7v-5.2h-7V18Z" />
-    </svg>
-  );
-}
-
 function CourseIcon() {
   return (
     <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -701,30 +696,6 @@ function BookmarkIcon() {
   return (
     <svg viewBox="0 0 24 24" aria-hidden="true">
       <path d="M6 4h12v16l-6-3.6L6 20V4Zm2 2v10.4l4-2.4 4 2.4V6H8Z" />
-    </svg>
-  );
-}
-
-function TrophyIcon() {
-  return (
-    <svg viewBox="0 0 24 24" aria-hidden="true">
-      <path d="M7 4h10v2h3v1.5A4.5 4.5 0 0 1 16.2 12 5.1 5.1 0 0 1 13 14v3h3v3H8v-3h3v-3a5.1 5.1 0 0 1-3.2-2A4.5 4.5 0 0 1 4 7.5V6h3V4Zm10 4V6h-1v2a6.9 6.9 0 0 1-.2 1.6A2.5 2.5 0 0 0 17 8Zm-10 0a2.5 2.5 0 0 0 1.2 1.6A6.9 6.9 0 0 1 8 8V6H7v2Z" />
-    </svg>
-  );
-}
-
-function SettingsIcon() {
-  return (
-    <svg viewBox="0 0 24 24" aria-hidden="true">
-      <path d="m12 4 1 .2.7 2.1a6 6 0 0 1 1.6.9l2.1-.7.7.8-1 2a6.6 6.6 0 0 1 .3 1.7l1.9 1v1l-1.9 1a6.6 6.6 0 0 1-.3 1.7l1 2-.7.8-2.1-.7a6 6 0 0 1-1.6.9L13 20l-1 .2-1-.2-.7-2.1a6 6 0 0 1-1.6-.9l-2.1.7-.7-.8 1-2A6.6 6.6 0 0 1 6.6 13l-1.9-1v-1l1.9-1a6.6 6.6 0 0 1 .3-1.7l-1-2 .7-.8 2.1.7a6 6 0 0 1 1.6-.9L11 4.2 12 4Zm0 5a3 3 0 1 0 0 6 3 3 0 0 0 0-6Z" />
-    </svg>
-  );
-}
-
-function AvatarIcon() {
-  return (
-    <svg viewBox="0 0 24 24" aria-hidden="true">
-      <path d="M12 12a4 4 0 1 0-4-4 4 4 0 0 0 4 4Zm0 2c-4.1 0-7 2.1-7 5v1h14v-1c0-2.9-2.9-5-7-5Z" />
     </svg>
   );
 }

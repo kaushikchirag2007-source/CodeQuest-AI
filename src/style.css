@@ -153,6 +153,7 @@
     color: var(--muted);
     transition: transform 180ms ease, background-color 180ms ease, color 180ms ease;
     font-size: 0.76rem;
+    letter-spacing: 0.04em;
   }
 
   .rail-button:hover,
@@ -169,7 +170,10 @@
     height: 42px;
     border-radius: 14px;
     background: rgba(255, 255, 255, 0.03);
-    font-size: 1.15rem;
+    font-size: 0.72rem;
+    font-weight: 800;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
   }
 
   .avatar-pill {
@@ -371,7 +375,14 @@
 
   .dashboard-grid {
     display: grid;
-    grid-template-columns: minmax(0, 1.02fr) minmax(0, 0.98fr);
+    grid-template-columns: minmax(0, 1fr) 340px;
+    gap: 22px;
+    align-items: start;
+  }
+
+  .dashboard-main-column,
+  .dashboard-side-column {
+    display: grid;
     gap: 22px;
   }
 
@@ -380,10 +391,6 @@
   .progress {
     padding: 24px;
     border-radius: 28px;
-  }
-
-  .scoreboard {
-    grid-row: span 2;
   }
 
   .section-head {
