@@ -1,12 +1,19 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 
-const navItems = ['Home', 'Courses', 'Tests', 'Bookmarks', 'Scoreboard'];
+const navItems = [
+  { id: 'home', label: 'Home', icon: HomeIcon },
+  { id: 'courses', label: 'Courses', icon: CourseIcon },
+  { id: 'tests', label: 'Tests', icon: TestIcon },
+  { id: 'bookmarks', label: 'Bookmarks', icon: BookmarkIcon },
+  { id: 'leaderboard', label: 'Leaderboard', icon: TrophyIcon },
+  { id: 'other', label: 'Other', icon: MoreIcon }
+];
 
 const user = {
   name: 'Maya Hart',
   username: '@maya.lingua',
   email: 'maya@linguacode.app',
-  password: '••••••••••••',
+  password: '************',
   phone: '+1 (415) 555-0198',
   memberSince: 'June 2024',
   avatar: 'MH',
@@ -28,22 +35,23 @@ const courseCards = [
     id: 'spoken',
     eyebrow: 'Warm-up your voice',
     title: 'Spoken Languages',
-    description: 'Build confidence with pronunciation drills, listening prompts, and real-world conversation scenes.',
-    stats: ['18 live drills', '6 saved paths']
+    description: 'Pronunciation drills, listening scenes, and confidence-building speaking sessions for daily fluency.',
+    stats: ['18 live drills', '6 saved paths', '4 coach sessions']
   },
   {
     id: 'coding',
     eyebrow: 'Think like a builder',
     title: 'Coding Languages',
-    description: 'Level up from syntax to systems with guided lessons, code labs, and timed challenge sets.',
-    stats: ['24 active lessons', '11 challenge sets']
+    description: 'Project-driven lessons, code labs, and timed practice to turn syntax recall into real momentum.',
+    stats: ['24 active lessons', '11 challenge sets', '3 mock interviews']
   }
 ];
 
 const quickActions = [
-  { label: 'Tests', count: '12 ready', icon: TestIcon },
-  { label: 'Saved Lessons', count: '28 saved', icon: CourseIcon },
-  { label: 'Saved Questions', count: '54 pinned', icon: BookmarkIcon }
+  { label: 'Tests', count: '12 ready', subtitle: 'Mock exams and skill checks', icon: TestIcon },
+  { label: 'Saved Lessons', count: '28 saved', subtitle: 'Continue where you paused', icon: CourseIcon },
+  { label: 'Bookmarks', count: '54 pinned', subtitle: 'Questions, notes, and snippets', icon: BookmarkIcon },
+  { label: 'Leaderboard', count: 'Top 20%', subtitle: 'Track your weekly standing', icon: TrophyIcon }
 ];
 
 const scoreboard = [
@@ -62,9 +70,9 @@ const bookmarks = [
 ];
 
 const notifications = [
-  { title: 'Your weekly digest is ready', detail: 'See where your coding accuracy improved this week.', unread: true },
-  { title: 'French Speaking Sprint unlocked', detail: 'Two new conversation drills were added this morning.', unread: true },
-  { title: 'Bookmark sync completed', detail: 'Your saved CODE and TEST items are now up to date.', unread: false }
+  { title: 'Weekly digest is ready', detail: 'Your coding accuracy improved by 6% this week.', unread: true },
+  { title: 'French sprint updated', detail: 'Two new conversation drills were added today.', unread: true },
+  { title: 'Bookmarks synced', detail: 'All saved CODE and TEST items are now up to date.', unread: false }
 ];
 
 const weeklyBars = [
@@ -136,21 +144,26 @@ function App() {
 
           <main className="page-content">
             <section className="dashboard-hero panel-surface">
-              <div>
-                <p className="eyebrow">Today&apos;s briefing</p>
-                <h1>Build fluency across spoken and coding languages.</h1>
+              <div className="hero-copy-wrap">
+                <p className="eyebrow">Daily dashboard</p>
+                <h1>Learn spoken and coding languages in one polished workspace.</h1>
                 <p className="hero-copy">
-                  Everything important stays on the homepage now: pick a track, jump into saved work,
-                  review progress, and keep an eye on where you rank this week.
+                  Choose a track, jump into tests, review bookmarks, and keep your momentum visible without
+                  clutter. The homepage stays clean while profile, settings, and alerts live in overlays.
                 </p>
               </div>
+
               <div className="hero-meta">
                 <div className="hero-chip">
-                  <span>XP this week</span>
+                  <span>Current streak</span>
+                  <strong>{user.streak} days</strong>
+                </div>
+                <div className="hero-chip">
+                  <span>Weekly XP</span>
                   <strong>+1,280</strong>
                 </div>
                 <div className="hero-chip">
-                  <span>Current rank</span>
+                  <span>Rank</span>
                   <strong>{user.rank}</strong>
                 </div>
               </div>
@@ -224,17 +237,22 @@ function TopNav({ streak, notificationCount, openPanel, setOpenPanel }) {
           <CompassIcon />
         </div>
         <div>
-          <p className="rail-title">LinguaCode</p>
-          <p className="rail-subtitle">Fluency for minds in motion</p>
+          <p className="brand-title">LinguaCode</p>
+          <p className="brand-subtitle">Fluency for minds in motion</p>
         </div>
       </div>
 
       <nav className="top-links" aria-label="Primary">
-        {navItems.map((item) => (
-          <button key={item} type="button" className="top-link">
-            {item}
-          </button>
-        ))}
+        {navItems.map((item) => {
+          const Icon = item.icon;
+
+          return (
+            <button key={item.id} type="button" className="top-link">
+              <Icon />
+              <span>{item.label}</span>
+            </button>
+          );
+        })}
       </nav>
 
       <div className="top-actions">
@@ -301,9 +319,10 @@ function QuickActionCard({ action }) {
       <span className="quick-icon">
         <Icon />
       </span>
-      <div>
+      <div className="quick-copy">
         <p>{action.label}</p>
-        <span>{action.count}</span>
+        <strong>{action.count}</strong>
+        <span>{action.subtitle}</span>
       </div>
     </button>
   );
@@ -315,7 +334,7 @@ function ScoreboardPanel() {
       <div className="section-head">
         <div>
           <p className="eyebrow">Competitive pulse</p>
-          <h3>Weekly scoreboard</h3>
+          <h3>Weekly leaderboard</h3>
         </div>
         <span className="section-chip">Top 20%</span>
       </div>
@@ -517,7 +536,7 @@ function SettingsPanel({
       <div className="sidebar-scroll">
         <section>
           <p className="eyebrow">Settings</p>
-          <h2 className="sidebar-title">Appearance, alerts, and support</h2>
+          <h2 className="sidebar-title">Appearance, alerts, account, and support</h2>
         </section>
 
         <section className="settings-group">
@@ -564,6 +583,9 @@ function SettingsPanel({
 
         <section className="settings-group">
           <h3>Account</h3>
+          <DetailRow label="Username" value={user.username} />
+          <DetailRow label="Email" value={user.email} />
+          <DetailRow label="Phone" value={user.phone} />
           <SettingChoiceRow
             label="Privacy"
             value={privacy}
@@ -681,6 +703,14 @@ function CompassIcon() {
   );
 }
 
+function HomeIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M4.5 10.8 12 4l7.5 6.8V20H4.5v-9.2Zm4 7.2h7v-5.2h-7V18Z" />
+    </svg>
+  );
+}
+
 function CourseIcon() {
   return (
     <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -701,6 +731,22 @@ function BookmarkIcon() {
   return (
     <svg viewBox="0 0 24 24" aria-hidden="true">
       <path d="M6 4h12v16l-6-3.6L6 20V4Zm2 2v10.4l4-2.4 4 2.4V6H8Z" />
+    </svg>
+  );
+}
+
+function TrophyIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M7 4h10v2h3v1.5A4.5 4.5 0 0 1 16.2 12 5.1 5.1 0 0 1 13 14v3h3v3H8v-3h3v-3a5.1 5.1 0 0 1-3.2-2A4.5 4.5 0 0 1 4 7.5V6h3V4Zm10 4V6h-1v2a6.9 6.9 0 0 1-.2 1.6A2.5 2.5 0 0 0 17 8Zm-10 0a2.5 2.5 0 0 0 1.2 1.6A6.9 6.9 0 0 1 8 8V6H7v2Z" />
+    </svg>
+  );
+}
+
+function MoreIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M5 10.5a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3Zm7 0a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3Zm7 0a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3Z" />
     </svg>
   );
 }
