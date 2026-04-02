@@ -11,38 +11,39 @@ const navItems = [
 ];
 
 const user = {
-  name: 'Avery Chen',
-  email: 'avery.chen@codequest.ai',
+  name: 'Maya Hart',
+  username: '@maya.lingua',
+  email: 'maya@linguacode.app',
   password: '••••••••••••',
-  phone: '+1 (415) 555-0144',
-  memberSince: 'March 2024',
-  avatar: 'AC',
-  xp: '18,420',
-  streak: 19,
-  lessonsDone: 214,
-  testsPassed: 37,
-  rank: '#12'
+  phone: '+1 (415) 555-0198',
+  memberSince: 'June 2024',
+  avatar: 'MH',
+  xp: '24,860',
+  streak: 27,
+  lessonsDone: 182,
+  testsPassed: 46,
+  rank: '#08'
 };
 
 const activeCourses = [
-  { title: 'Advanced JavaScript', track: 'Coding', progress: 84 },
-  { title: 'Business English Fluency', track: 'Spoken', progress: 67 },
-  { title: 'React Patterns Lab', track: 'Coding', progress: 49 }
+  { title: 'JavaScript Interview Studio', track: 'Coding', progress: 84 },
+  { title: 'French Speaking Sprint', track: 'Spoken', progress: 67 },
+  { title: 'TypeScript Systems Lab', track: 'Coding', progress: 49 }
 ];
 
 const courseCards = [
   {
     id: 'spoken',
-    eyebrow: 'Human fluency',
+    eyebrow: 'Warm-up your voice',
     title: 'Spoken Languages',
-    description: 'Sharpen pronunciation, listening, and speaking confidence with scenario-based practice.',
+    description: 'Build confidence with pronunciation drills, listening prompts, and real-world conversation scenes.',
     stats: ['18 live drills', '6 saved paths']
   },
   {
     id: 'coding',
-    eyebrow: 'Builder fluency',
+    eyebrow: 'Think like a builder',
     title: 'Coding Languages',
-    description: 'Move from syntax recall to project confidence with exercises, snippets, and timed practice.',
+    description: 'Level up from syntax to systems with guided lessons, code labs, and timed challenge sets.',
     stats: ['24 active lessons', '11 challenge sets']
   }
 ];
@@ -54,18 +55,18 @@ const quickActions = [
 ];
 
 const scoreboard = [
-  { name: 'Mina Park', score: 9820, trend: '+120' },
-  { name: 'Noah Patel', score: 9410, trend: '+95' },
-  { name: 'You', score: 9185, trend: '+142', highlight: true },
-  { name: 'Lina Costa', score: 9010, trend: '+88' },
-  { name: 'Arjun Mehta', score: 8840, trend: '+76' }
+  { name: 'Lena Brooks', score: 11540, trend: '+164' },
+  { name: 'Diego Rossi', score: 11090, trend: '+121' },
+  { name: 'You', score: 10880, trend: '+187', highlight: true },
+  { name: 'Nia Carter', score: 10620, trend: '+98' },
+  { name: 'Jae Kim', score: 10240, trend: '+84' }
 ];
 
 const bookmarks = [
-  { title: 'Closures in practice', tag: 'CODE', note: 'Saved from JavaScript mastery' },
-  { title: 'Spanish travel phrases', tag: 'SPOKEN', note: 'Ready for quick review' },
-  { title: 'Async patterns mock test', tag: 'TEST', note: '18 questions remaining' },
-  { title: 'Interview algorithms sheet', tag: 'CODE', note: 'Prioritized for this week' }
+  { title: 'Closures under pressure', tag: 'CODE', note: 'Pinned from JavaScript interview studio' },
+  { title: 'Paris cafe essentials', tag: 'SPOKEN', note: 'Quick review set for travel fluency' },
+  { title: 'Async patterns checkpoint', tag: 'TEST', note: '18 questions remaining before submit' },
+  { title: 'State management patterns', tag: 'CODE', note: 'Saved for this weekend sprint' }
 ];
 
 const weeklyBars = [
@@ -78,12 +79,10 @@ const weeklyBars = [
   { day: 'Sun', value: 76 }
 ];
 
-const settingsData = {
-  fontSize: 'Comfortable',
-  accent: 'Amber / Teal',
-  privacy: 'Friends only',
-  language: 'English (US)'
-};
+const fontSizes = ['Compact', 'Comfortable', 'Large'];
+const accentColors = ['Amber / Teal', 'Amber', 'Teal'];
+const privacyModes = ['Friends only', 'Private', 'Public'];
+const languageOptions = ['English (US)', 'English (UK)', 'French'];
 
 function App() {
   const [activeRail, setActiveRail] = useState('home');
@@ -92,6 +91,10 @@ function App() {
   const [dailyReminders, setDailyReminders] = useState(true);
   const [achievements, setAchievements] = useState(true);
   const [weeklyDigest, setWeeklyDigest] = useState(false);
+  const [fontSize, setFontSize] = useState('Comfortable');
+  const [accentColor, setAccentColor] = useState('Amber / Teal');
+  const [privacy, setPrivacy] = useState('Friends only');
+  const [language, setLanguage] = useState('English (US)');
 
   const activePanel = activeRail === 'settings' ? 'settings' : activeRail === 'profile' ? 'profile' : sidebarTab;
 
@@ -154,6 +157,14 @@ function App() {
             setAchievements={setAchievements}
             weeklyDigest={weeklyDigest}
             setWeeklyDigest={setWeeklyDigest}
+            fontSize={fontSize}
+            setFontSize={setFontSize}
+            accentColor={accentColor}
+            setAccentColor={setAccentColor}
+            privacy={privacy}
+            setPrivacy={setPrivacy}
+            language={language}
+            setLanguage={setLanguage}
           />
         </div>
       </div>
@@ -169,8 +180,8 @@ function IconRail({ activeRail, onSelect }) {
           <CompassIcon />
         </div>
         <div>
-          <p className="rail-title">CodeQuest</p>
-          <p className="rail-subtitle">Editorial learning</p>
+          <p className="rail-title">LinguaCode</p>
+          <p className="rail-subtitle">Fluency for minds in motion</p>
         </div>
       </div>
 
@@ -203,7 +214,7 @@ function TopBar({ name, streak, notificationCount }) {
   return (
     <header className="topbar panel-surface">
       <div>
-        <p className="eyebrow">Tuesday briefing</p>
+        <p className="eyebrow">Today&apos;s briefing</p>
         <h1>Welcome back, {name.split(' ')[0]}.</h1>
       </div>
 
@@ -368,7 +379,15 @@ function SidebarPanel({
   achievements,
   setAchievements,
   weeklyDigest,
-  setWeeklyDigest
+  setWeeklyDigest,
+  fontSize,
+  setFontSize,
+  accentColor,
+  setAccentColor,
+  privacy,
+  setPrivacy,
+  language,
+  setLanguage
 }) {
   return (
     <aside className="sidebar panel-surface">
@@ -399,6 +418,14 @@ function SidebarPanel({
           setAchievements={setAchievements}
           weeklyDigest={weeklyDigest}
           setWeeklyDigest={setWeeklyDigest}
+          fontSize={fontSize}
+          setFontSize={setFontSize}
+          accentColor={accentColor}
+          setAccentColor={setAccentColor}
+          privacy={privacy}
+          setPrivacy={setPrivacy}
+          language={language}
+          setLanguage={setLanguage}
         />
       ) : (
         <ProfilePanel />
@@ -413,7 +440,7 @@ function ProfilePanel() {
       <section className="profile-hero">
         <div className="profile-avatar-wrap">
           <div className="profile-avatar">{user.avatar}</div>
-          <button type="button" className="avatar-edit">
+          <button type="button" className="avatar-edit" aria-label="Edit profile picture">
             <EditIcon />
           </button>
         </div>
@@ -424,7 +451,7 @@ function ProfilePanel() {
       </section>
 
       <section className="detail-list">
-        <DetailRow label="Username" value="@averycodes" />
+        <DetailRow label="Username" value={user.username} />
         <DetailRow label="Email" value={user.email} />
         <DetailRow label="Password" value={user.password} />
         <DetailRow label="Phone" value={user.phone} />
@@ -482,7 +509,15 @@ function SettingsPanel({
   achievements,
   setAchievements,
   weeklyDigest,
-  setWeeklyDigest
+  setWeeklyDigest,
+  fontSize,
+  setFontSize,
+  accentColor,
+  setAccentColor,
+  privacy,
+  setPrivacy,
+  language,
+  setLanguage
 }) {
   return (
     <div className="sidebar-scroll">
@@ -497,8 +532,20 @@ function SettingsPanel({
           value={darkMode ? 'On' : 'Off'}
           control={<Toggle checked={darkMode} onChange={setDarkMode} />}
         />
-        <SettingRow label="Font size" value={settingsData.fontSize} />
-        <SettingRow label="Accent color" value={settingsData.accent} />
+        <SettingChoiceRow
+          label="Font size"
+          value={fontSize}
+          options={fontSizes}
+          selected={fontSize}
+          onSelect={setFontSize}
+        />
+        <SettingChoiceRow
+          label="Accent color"
+          value={accentColor}
+          options={accentColors}
+          selected={accentColor}
+          onSelect={setAccentColor}
+        />
       </section>
 
       <section className="settings-group">
@@ -522,8 +569,20 @@ function SettingsPanel({
 
       <section className="settings-group">
         <h3>Preferences</h3>
-        <SettingRow label="Privacy" value={settingsData.privacy} />
-        <SettingRow label="Language" value={settingsData.language} />
+        <SettingChoiceRow
+          label="Privacy"
+          value={privacy}
+          options={privacyModes}
+          selected={privacy}
+          onSelect={setPrivacy}
+        />
+        <SettingChoiceRow
+          label="Language"
+          value={language}
+          options={languageOptions}
+          selected={language}
+          onSelect={setLanguage}
+        />
       </section>
 
       <section className="settings-links">
@@ -564,6 +623,31 @@ function SettingRow({ label, value, control }) {
         <span>{value}</span>
       </div>
       {control ?? <button type="button" className="ghost-chip">{value}</button>}
+    </div>
+  );
+}
+
+function SettingChoiceRow({ label, value, options, selected, onSelect }) {
+  return (
+    <div className="setting-choice-card">
+      <div className="setting-choice-head">
+        <div>
+          <p>{label}</p>
+          <span>{value}</span>
+        </div>
+      </div>
+      <div className="choice-group" role="group" aria-label={label}>
+        {options.map((option) => (
+          <button
+            key={option}
+            type="button"
+            className={`choice-chip ${selected === option ? 'active' : ''}`}
+            onClick={() => onSelect(option)}
+          >
+            {option}
+          </button>
+        ))}
+      </div>
     </div>
   );
 }
