@@ -1,14 +1,6 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 
-const navItems = [
-  { id: 'home', label: 'Home', shortLabel: 'HM' },
-  { id: 'courses', label: 'Courses', shortLabel: 'CR' },
-  { id: 'tests', label: 'Tests', shortLabel: 'TS' },
-  { id: 'bookmarks', label: 'Bookmarks', shortLabel: 'BM' },
-  { id: 'scoreboard', label: 'Scoreboard', shortLabel: 'SB' },
-  { id: 'settings', label: 'Settings', shortLabel: 'ST' },
-  { id: 'profile', label: 'Profile', shortLabel: 'MH' }
-];
+const navItems = ['Home', 'Courses', 'Tests', 'Bookmarks', 'Scoreboard'];
 
 const user = {
   name: 'Maya Hart',
@@ -69,6 +61,12 @@ const bookmarks = [
   { title: 'State management patterns', tag: 'CODE', note: 'Saved for this weekend sprint' }
 ];
 
+const notifications = [
+  { title: 'Your weekly digest is ready', detail: 'See where your coding accuracy improved this week.', unread: true },
+  { title: 'French Speaking Sprint unlocked', detail: 'Two new conversation drills were added this morning.', unread: true },
+  { title: 'Bookmark sync completed', detail: 'Your saved CODE and TEST items are now up to date.', unread: false }
+];
+
 const weeklyBars = [
   { day: 'Mon', value: 44 },
   { day: 'Tue', value: 72 },
@@ -85,8 +83,6 @@ const privacyModes = ['Friends only', 'Private', 'Public'];
 const languageOptions = ['English (US)', 'English (UK)', 'French'];
 
 function App() {
-  const [activeRail, setActiveRail] = useState('home');
-  const [sidebarTab, setSidebarTab] = useState('profile');
   const [darkMode, setDarkMode] = useState(true);
   const [dailyReminders, setDailyReminders] = useState(true);
   const [achievements, setAchievements] = useState(true);
@@ -95,51 +91,85 @@ function App() {
   const [accentColor, setAccentColor] = useState('Amber / Teal');
   const [privacy, setPrivacy] = useState('Friends only');
   const [language, setLanguage] = useState('English (US)');
-
-  const activePanel = activeRail === 'settings' ? 'settings' : activeRail === 'profile' ? 'profile' : sidebarTab;
+  const [openPanel, setOpenPanel] = useState(null);
+  const overlayRef = useRef(null);
 
   const notificationCount = useMemo(
-    () => [dailyReminders, achievements, weeklyDigest].filter(Boolean).length + 2,
-    [dailyReminders, achievements, weeklyDigest]
+    () => notifications.filter((item) => item.unread).length,
+    []
   );
+
+  useEffect(() => {
+    function handlePointerDown(event) {
+      if (overlayRef.current && !overlayRef.current.contains(event.target)) {
+        setOpenPanel(null);
+      }
+    }
+
+    function handleEscape(event) {
+      if (event.key === 'Escape') {
+        setOpenPanel(null);
+      }
+    }
+
+    document.addEventListener('mousedown', handlePointerDown);
+    document.addEventListener('keydown', handleEscape);
+
+    return () => {
+      document.removeEventListener('mousedown', handlePointerDown);
+      document.removeEventListener('keydown', handleEscape);
+    };
+  }, []);
 
   return (
     <div className={darkMode ? 'dark' : ''}>
       <div className="app-shell">
         <div className="app-noise" aria-hidden="true" />
 
-        <div className="dashboard-layout">
-          <IconRail
-            activeRail={activeRail}
-            onSelect={(id) => {
-              setActiveRail(id);
-              if (id === 'profile' || id === 'settings') {
-                setSidebarTab(id);
-              }
-            }}
+        <div className="home-page">
+          <TopNav
+            streak={user.streak}
+            notificationCount={notificationCount}
+            openPanel={openPanel}
+            setOpenPanel={setOpenPanel}
           />
 
-          <main className="content-column">
-            <TopBar
-              name={user.name}
-              streak={user.streak}
-              notificationCount={notificationCount}
-            />
+          <main className="page-content">
+            <section className="dashboard-hero panel-surface">
+              <div>
+                <p className="eyebrow">Today&apos;s briefing</p>
+                <h1>Build fluency across spoken and coding languages.</h1>
+                <p className="hero-copy">
+                  Everything important stays on the homepage now: pick a track, jump into saved work,
+                  review progress, and keep an eye on where you rank this week.
+                </p>
+              </div>
+              <div className="hero-meta">
+                <div className="hero-chip">
+                  <span>XP this week</span>
+                  <strong>+1,280</strong>
+                </div>
+                <div className="hero-chip">
+                  <span>Current rank</span>
+                  <strong>{user.rank}</strong>
+                </div>
+              </div>
+            </section>
+
+            <section className="hero-grid">
+              {courseCards.map((card, index) => (
+                <CourseCard key={card.id} card={card} index={index} />
+              ))}
+            </section>
+
+            <section className="quick-actions">
+              {quickActions.map((action) => (
+                <QuickActionCard key={action.label} action={action} />
+              ))}
+            </section>
 
             <section className="dashboard-grid">
               <div className="dashboard-main-column">
-                <section className="hero-grid">
-                  {courseCards.map((card, index) => (
-                    <CourseCard key={card.id} card={card} index={index} />
-                  ))}
-                </section>
-
-                <section className="quick-actions">
-                  {quickActions.map((action) => (
-                    <QuickActionCard key={action.label} action={action} />
-                  ))}
-                </section>
-
                 <ProgressPanel />
               </div>
 
@@ -150,37 +180,46 @@ function App() {
             </section>
           </main>
 
-          <SidebarPanel
-            activePanel={activePanel}
-            sidebarTab={sidebarTab}
-            setSidebarTab={setSidebarTab}
-            darkMode={darkMode}
-            setDarkMode={setDarkMode}
-            dailyReminders={dailyReminders}
-            setDailyReminders={setDailyReminders}
-            achievements={achievements}
-            setAchievements={setAchievements}
-            weeklyDigest={weeklyDigest}
-            setWeeklyDigest={setWeeklyDigest}
-            fontSize={fontSize}
-            setFontSize={setFontSize}
-            accentColor={accentColor}
-            setAccentColor={setAccentColor}
-            privacy={privacy}
-            setPrivacy={setPrivacy}
-            language={language}
-            setLanguage={setLanguage}
-          />
+          {openPanel ? (
+            <div className="overlay-layer">
+              <div ref={overlayRef} className="overlay-anchor">
+                {openPanel === 'notifications' ? (
+                  <NotificationsPanel notificationCount={notificationCount} />
+                ) : null}
+                {openPanel === 'settings' ? (
+                  <SettingsPanel
+                    darkMode={darkMode}
+                    setDarkMode={setDarkMode}
+                    dailyReminders={dailyReminders}
+                    setDailyReminders={setDailyReminders}
+                    achievements={achievements}
+                    setAchievements={setAchievements}
+                    weeklyDigest={weeklyDigest}
+                    setWeeklyDigest={setWeeklyDigest}
+                    fontSize={fontSize}
+                    setFontSize={setFontSize}
+                    accentColor={accentColor}
+                    setAccentColor={setAccentColor}
+                    privacy={privacy}
+                    setPrivacy={setPrivacy}
+                    language={language}
+                    setLanguage={setLanguage}
+                  />
+                ) : null}
+                {openPanel === 'profile' ? <ProfilePanel /> : null}
+              </div>
+            </div>
+          ) : null}
         </div>
       </div>
     </div>
   );
 }
 
-function IconRail({ activeRail, onSelect }) {
+function TopNav({ streak, notificationCount, openPanel, setOpenPanel }) {
   return (
-    <aside className="icon-rail panel-surface">
-      <div className="rail-brand">
+    <header className="top-nav panel-surface">
+      <div className="nav-brand">
         <div className="brand-mark">
           <CompassIcon />
         </div>
@@ -190,45 +229,43 @@ function IconRail({ activeRail, onSelect }) {
         </div>
       </div>
 
-      <nav className="rail-nav" aria-label="Primary">
-        {navItems.map((item) => {
-          const isActive = activeRail === item.id;
-          const isProfile = item.id === 'profile';
-
-          return (
-            <button
-              key={item.id}
-              type="button"
-              className={`rail-button ${isActive ? 'active' : ''}`}
-              onClick={() => onSelect(item.id)}
-              aria-pressed={isActive}
-            >
-              <span className={`rail-icon ${isProfile ? 'avatar-pill' : ''}`}>{item.shortLabel}</span>
-              <span>{item.label}</span>
-            </button>
-          );
-        })}
+      <nav className="top-links" aria-label="Primary">
+        {navItems.map((item) => (
+          <button key={item} type="button" className="top-link">
+            {item}
+          </button>
+        ))}
       </nav>
-    </aside>
-  );
-}
 
-function TopBar({ name, streak, notificationCount }) {
-  return (
-    <header className="topbar panel-surface">
-      <div>
-        <p className="eyebrow">Today&apos;s briefing</p>
-        <h1>Welcome back, {name.split(' ')[0]}.</h1>
-      </div>
-
-      <div className="topbar-actions">
+      <div className="top-actions">
         <div className="streak-badge">
           <FireIcon />
           <span>{streak}-day streak</span>
         </div>
-        <button type="button" className="icon-chip" aria-label="Notifications">
+        <button
+          type="button"
+          className={`toolbar-button ${openPanel === 'notifications' ? 'active' : ''}`}
+          aria-label="Notifications"
+          onClick={() => setOpenPanel((value) => (value === 'notifications' ? null : 'notifications'))}
+        >
           <BellIcon />
-          <strong>{notificationCount}</strong>
+          {notificationCount ? <span className="toolbar-count">{notificationCount}</span> : null}
+        </button>
+        <button
+          type="button"
+          className={`toolbar-button ${openPanel === 'settings' ? 'active' : ''}`}
+          aria-label="Settings"
+          onClick={() => setOpenPanel((value) => (value === 'settings' ? null : 'settings'))}
+        >
+          <GearIcon />
+        </button>
+        <button
+          type="button"
+          className={`toolbar-button avatar-button ${openPanel === 'profile' ? 'active' : ''}`}
+          aria-label="Profile"
+          onClick={() => setOpenPanel((value) => (value === 'profile' ? null : 'profile'))}
+        >
+          {user.avatar}
         </button>
       </div>
     </header>
@@ -362,145 +399,98 @@ function ProgressPanel() {
   );
 }
 
-function StatCard({ label, value, tone }) {
+function NotificationsPanel({ notificationCount }) {
   return (
-    <div className={`stat-card stat-${tone}`}>
-      <span>{label}</span>
-      <strong>{value}</strong>
-    </div>
-  );
-}
-
-function SidebarPanel({
-  activePanel,
-  sidebarTab,
-  setSidebarTab,
-  darkMode,
-  setDarkMode,
-  dailyReminders,
-  setDailyReminders,
-  achievements,
-  setAchievements,
-  weeklyDigest,
-  setWeeklyDigest,
-  fontSize,
-  setFontSize,
-  accentColor,
-  setAccentColor,
-  privacy,
-  setPrivacy,
-  language,
-  setLanguage
-}) {
-  return (
-    <aside className="sidebar panel-surface">
-      <div className="sidebar-tabs">
-        <button
-          type="button"
-          className={sidebarTab === 'profile' ? 'active' : ''}
-          onClick={() => setSidebarTab('profile')}
-        >
-          Profile
-        </button>
-        <button
-          type="button"
-          className={sidebarTab === 'settings' ? 'active' : ''}
-          onClick={() => setSidebarTab('settings')}
-        >
-          Settings
-        </button>
+    <section className="floating-panel panel-surface">
+      <div className="section-head">
+        <div>
+          <p className="eyebrow">Notifications</p>
+          <h3>Inbox</h3>
+        </div>
+        <span className="section-chip">{notificationCount} unread</span>
       </div>
 
-      {activePanel === 'settings' ? (
-        <SettingsPanel
-          darkMode={darkMode}
-          setDarkMode={setDarkMode}
-          dailyReminders={dailyReminders}
-          setDailyReminders={setDailyReminders}
-          achievements={achievements}
-          setAchievements={setAchievements}
-          weeklyDigest={weeklyDigest}
-          setWeeklyDigest={setWeeklyDigest}
-          fontSize={fontSize}
-          setFontSize={setFontSize}
-          accentColor={accentColor}
-          setAccentColor={setAccentColor}
-          privacy={privacy}
-          setPrivacy={setPrivacy}
-          language={language}
-          setLanguage={setLanguage}
-        />
-      ) : (
-        <ProfilePanel />
-      )}
-    </aside>
+      <div className="notification-list">
+        {notifications.map((item) => (
+          <article key={item.title} className={`notification-card ${item.unread ? 'unread' : ''}`}>
+            <div className="notification-line">
+              <h4>{item.title}</h4>
+              {item.unread ? <span className="unread-dot" aria-hidden="true" /> : null}
+            </div>
+            <p>{item.detail}</p>
+          </article>
+        ))}
+      </div>
+    </section>
   );
 }
 
 function ProfilePanel() {
   return (
-    <div className="sidebar-scroll">
-      <section className="profile-hero">
-        <div className="profile-avatar-wrap">
-          <div className="profile-avatar">{user.avatar}</div>
-          <button type="button" className="avatar-edit" aria-label="Edit profile picture">
-            <EditIcon />
-          </button>
-        </div>
-        <div>
-          <p className="eyebrow">Profile tab</p>
-          <h2>{user.name}</h2>
-        </div>
-      </section>
-
-      <section className="detail-list">
-        <DetailRow label="Username" value={user.username} />
-        <DetailRow label="Email" value={user.email} />
-        <DetailRow label="Password" value={user.password} />
-        <DetailRow label="Phone" value={user.phone} />
-        <DetailRow label="Member since" value={user.memberSince} />
-      </section>
-
-      <section className="metric-grid">
-        <MetricCard label="XP" value={user.xp} />
-        <MetricCard label="Streak" value={`${user.streak} days`} />
-        <MetricCard label="Lessons done" value={String(user.lessonsDone)} />
-        <MetricCard label="Tests passed" value={String(user.testsPassed)} />
-        <MetricCard label="Rank" value={user.rank} />
-      </section>
-
-      <section className="course-progress-block">
-        <div className="section-head compact">
-          <div>
-            <p className="eyebrow">In motion</p>
-            <h3>Active courses</h3>
+    <section className="floating-panel panel-surface">
+      <div className="sidebar-scroll">
+        <section className="profile-hero">
+          <div className="profile-avatar-wrap">
+            <div className="profile-avatar">{user.avatar}</div>
+            <button type="button" className="avatar-edit" aria-label="Edit profile picture">
+              <EditIcon />
+            </button>
           </div>
-        </div>
+          <div>
+            <p className="eyebrow">Profile</p>
+            <h2>{user.name}</h2>
+          </div>
+        </section>
 
-        <div className="course-progress-list">
-          {activeCourses.map((course, index) => (
-            <div key={course.title} className="course-progress-card">
-              <div className="course-progress-head">
-                <div>
-                  <h4>{course.title}</h4>
-                  <span>{course.track}</span>
-                </div>
-                <strong>{course.progress}%</strong>
-              </div>
-              <div className="progress-track">
-                <div
-                  className="progress-fill"
-                  style={{
-                    width: `${course.progress}%`,
-                    animationDelay: `${index * 120}ms`
-                  }}
-                />
-              </div>
+        <section className="detail-list">
+          <DetailRow label="Username" value={user.username} />
+          <DetailRow label="Email" value={user.email} />
+          <DetailRow label="Password" value={user.password} />
+          <DetailRow label="Phone" value={user.phone} />
+          <DetailRow label="Member since" value={user.memberSince} />
+        </section>
+
+        <section className="metric-grid">
+          <MetricCard label="XP" value={user.xp} />
+          <MetricCard label="Streak" value={`${user.streak} days`} />
+          <MetricCard label="Lessons done" value={String(user.lessonsDone)} />
+          <MetricCard label="Tests passed" value={String(user.testsPassed)} />
+          <MetricCard label="Rank" value={user.rank} />
+        </section>
+
+        <section className="course-progress-block">
+          <div className="section-head compact">
+            <div>
+              <p className="eyebrow">In progress</p>
+              <h3>Courses in progress</h3>
             </div>
-          ))}
-        </div>
-      </section>
-    </div>
+          </div>
+
+          <div className="course-progress-list">
+            {activeCourses.map((course, index) => (
+              <div key={course.title} className="course-progress-card">
+                <div className="course-progress-head">
+                  <div>
+                    <h4>{course.title}</h4>
+                    <span>{course.track}</span>
+                  </div>
+                  <strong>{course.progress}%</strong>
+                </div>
+                <div className="progress-track">
+                  <div
+                    className="progress-fill"
+                    style={{
+                      width: `${course.progress}%`,
+                      animationDelay: `${index * 120}ms`
+                    }}
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      </div>
+    </section>
   );
 }
 
@@ -523,79 +513,94 @@ function SettingsPanel({
   setLanguage
 }) {
   return (
-    <div className="sidebar-scroll">
-      <section>
-        <p className="eyebrow">Settings tab</p>
-        <h2 className="sidebar-title">Refine your workspace</h2>
-      </section>
+    <section className="floating-panel panel-surface">
+      <div className="sidebar-scroll">
+        <section>
+          <p className="eyebrow">Settings</p>
+          <h2 className="sidebar-title">Appearance, alerts, and support</h2>
+        </section>
 
-      <section className="settings-group">
-        <SettingRow
-          label="Dark mode"
-          value={darkMode ? 'On' : 'Off'}
-          control={<Toggle checked={darkMode} onChange={setDarkMode} />}
-        />
-        <SettingChoiceRow
-          label="Font size"
-          value={fontSize}
-          options={fontSizes}
-          selected={fontSize}
-          onSelect={setFontSize}
-        />
-        <SettingChoiceRow
-          label="Accent color"
-          value={accentColor}
-          options={accentColors}
-          selected={accentColor}
-          onSelect={setAccentColor}
-        />
-      </section>
+        <section className="settings-group">
+          <h3>Appearance</h3>
+          <SettingRow
+            label="Dark mode"
+            value={darkMode ? 'On' : 'Off'}
+            control={<Toggle checked={darkMode} onChange={setDarkMode} />}
+          />
+          <SettingChoiceRow
+            label="Font size"
+            value={fontSize}
+            options={fontSizes}
+            selected={fontSize}
+            onSelect={setFontSize}
+          />
+          <SettingChoiceRow
+            label="Accent color"
+            value={accentColor}
+            options={accentColors}
+            selected={accentColor}
+            onSelect={setAccentColor}
+          />
+        </section>
 
-      <section className="settings-group">
-        <h3>Notifications</h3>
-        <SettingRow
-          label="Daily reminders"
-          value={dailyReminders ? 'Enabled' : 'Disabled'}
-          control={<Toggle checked={dailyReminders} onChange={setDailyReminders} />}
-        />
-        <SettingRow
-          label="Achievements"
-          value={achievements ? 'Enabled' : 'Disabled'}
-          control={<Toggle checked={achievements} onChange={setAchievements} />}
-        />
-        <SettingRow
-          label="Weekly digest"
-          value={weeklyDigest ? 'Enabled' : 'Disabled'}
-          control={<Toggle checked={weeklyDigest} onChange={setWeeklyDigest} />}
-        />
-      </section>
+        <section className="settings-group">
+          <h3>Notifications</h3>
+          <SettingRow
+            label="Daily reminders"
+            value={dailyReminders ? 'Enabled' : 'Disabled'}
+            control={<Toggle checked={dailyReminders} onChange={setDailyReminders} />}
+          />
+          <SettingRow
+            label="Achievements"
+            value={achievements ? 'Enabled' : 'Disabled'}
+            control={<Toggle checked={achievements} onChange={setAchievements} />}
+          />
+          <SettingRow
+            label="Weekly digest"
+            value={weeklyDigest ? 'Enabled' : 'Disabled'}
+            control={<Toggle checked={weeklyDigest} onChange={setWeeklyDigest} />}
+          />
+        </section>
 
-      <section className="settings-group">
-        <h3>Preferences</h3>
-        <SettingChoiceRow
-          label="Privacy"
-          value={privacy}
-          options={privacyModes}
-          selected={privacy}
-          onSelect={setPrivacy}
-        />
-        <SettingChoiceRow
-          label="Language"
-          value={language}
-          options={languageOptions}
-          selected={language}
-          onSelect={setLanguage}
-        />
-      </section>
+        <section className="settings-group">
+          <h3>Account</h3>
+          <SettingChoiceRow
+            label="Privacy"
+            value={privacy}
+            options={privacyModes}
+            selected={privacy}
+            onSelect={setPrivacy}
+          />
+          <SettingChoiceRow
+            label="Language"
+            value={language}
+            options={languageOptions}
+            selected={language}
+            onSelect={setLanguage}
+          />
+        </section>
 
-      <section className="settings-links">
-        {['Help Centre', 'FAQs', 'Send Feedback', 'Sign Out'].map((label) => (
-          <button key={label} type="button" className="settings-link">
-            <span>{label}</span>
-            <ArrowIcon />
-          </button>
-        ))}
-      </section>
+        <section className="settings-group">
+          <h3>Support</h3>
+          <div className="settings-links">
+            {['Help Centre', 'FAQs', 'Send Feedback', 'Sign Out'].map((label) => (
+              <button key={label} type="button" className="settings-link">
+                <span>{label}</span>
+                <ArrowIcon />
+              </button>
+            ))}
+          </div>
+        </section>
+      </div>
+    </section>
+  );
+}
+
+function StatCard({ label, value, tone }) {
+  return (
+    <div className={`stat-card stat-${tone}`}>
+      <span>{label}</span>
+      <strong>{value}</strong>
     </div>
   );
 }
@@ -712,6 +717,14 @@ function BellIcon() {
   return (
     <svg viewBox="0 0 24 24" aria-hidden="true">
       <path d="M12 3a5 5 0 0 0-5 5v2.1c0 .8-.3 1.6-.8 2.2L4.6 14v1h14.8v-1l-1.6-1.7c-.5-.6-.8-1.4-.8-2.2V8a5 5 0 0 0-5-5Zm0 18a2.5 2.5 0 0 0 2.4-2h-4.8A2.5 2.5 0 0 0 12 21Z" />
+    </svg>
+  );
+}
+
+function GearIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="m12 4 1 .2.7 2.1a6 6 0 0 1 1.6.9l2.1-.7.7.8-1 2a6.6 6.6 0 0 1 .3 1.7l1.9 1v1l-1.9 1a6.6 6.6 0 0 1-.3 1.7l1 2-.7.8-2.1-.7a6 6 0 0 1-1.6.9L13 20l-1 .2-1-.2-.7-2.1a6 6 0 0 1-1.6-.9l-2.1.7-.7-.8 1-2A6.6 6.6 0 0 1 6.6 13l-1.9-1v-1l1.9-1a6.6 6.6 0 0 1 .3-1.7l-1-2 .7-.8 2.1.7a6 6 0 0 1 1.6-.9L11 4.2 12 4Zm0 5a3 3 0 1 0 0 6 3 3 0 0 0 0-6Z" />
     </svg>
   );
 }
