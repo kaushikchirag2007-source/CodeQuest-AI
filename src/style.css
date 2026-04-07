@@ -638,6 +638,11 @@
     gap: 20px;
   }
 
+  .home-content-grid {
+    grid-template-columns: minmax(0, 820px);
+    justify-content: center;
+  }
+
   .progress-layout {
     grid-template-columns: minmax(0, 1.2fr) minmax(0, 0.8fr);
   }
@@ -753,6 +758,46 @@
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 12px;
+  }
+
+  .profile-course-section,
+  .profile-course-grid {
+    display: grid;
+    gap: 14px;
+  }
+
+  .profile-course-card {
+    display: grid;
+    grid-template-columns: 64px minmax(0, 1fr);
+    gap: 14px;
+    padding: 16px;
+    border-radius: 24px;
+    border: 1px solid var(--line);
+    background: var(--surface-soft);
+  }
+
+  .profile-course-icon {
+    width: 64px;
+    height: 64px;
+    border-radius: 20px;
+    display: grid;
+    place-items: center;
+    background: linear-gradient(135deg, rgba(240, 172, 86, 0.18), rgba(85, 207, 191, 0.18));
+    border: 1px solid var(--line);
+    font-size: 0.95rem;
+    font-weight: 700;
+  }
+
+  .profile-course-body {
+    display: grid;
+    gap: 12px;
+    min-width: 0;
+  }
+
+  .profile-course-body p {
+    margin: 0;
+    color: var(--muted);
+    line-height: 1.6;
   }
 
   .metric-card,
@@ -889,6 +934,10 @@
     .page-hero {
       grid-template-columns: 1fr;
       gap: 18px;
+    }
+
+    .profile-course-card {
+      grid-template-columns: 1fr;
     }
   }
 

@@ -94,9 +94,9 @@ const notifications = [
 ];
 
 const activeCourses = [
-  { title: 'JavaScript Interview Studio', track: 'Coding', progress: 84 },
-  { title: 'French Speaking Sprint', track: 'Spoken', progress: 67 },
-  { title: 'TypeScript Systems Lab', track: 'Coding', progress: 49 }
+  { title: 'JavaScript Interview Studio', track: 'Coding', progress: 84, symbol: '</>', detail: 'Mock interviews, closure drills, and system prompts.' },
+  { title: 'French Speaking Sprint', track: 'Spoken', progress: 67, symbol: '\u25cc', detail: 'Conversation loops, listening scenes, and fluency drills.' },
+  { title: 'TypeScript Systems Lab', track: 'Coding', progress: 49, symbol: '</>', detail: 'Types, architecture thinking, and safer component patterns.' }
 ];
 
 const appearanceOptions = ['Comfortable', 'Compact', 'Large'];
@@ -385,24 +385,7 @@ function HomePage({ navigate }) {
         ))}
       </section>
 
-      <section className="content-grid">
-        <section className="glass-card panel-block">
-          <div className="section-head">
-            <div>
-              <p className="eyebrow">Jump back in</p>
-              <h2>Useful shortcuts</h2>
-            </div>
-          </div>
-
-          <div className="shortcut-grid shortcut-grid-five">
-            <ShortcutCard label="Tests" symbol={'\u2713'} detail="Run a mock or skill check" onClick={() => navigate('tests')} />
-            <ShortcutCard label="Bookmarks" symbol={'\u2605'} detail="Review saved questions and notes" onClick={() => navigate('bookmarks')} />
-            <ShortcutCard label="Spoken" symbol={'\u25cc'} detail="Continue conversation practice" onClick={() => navigate('spoken')} />
-            <ShortcutCard label="Coding" symbol="</>" detail="Resume labs and interviews" onClick={() => navigate('coding')} />
-            <ShortcutCard label="Progress" symbol={'\u25b2'} detail="See detailed learning progress" onClick={() => navigate('progress')} />
-          </div>
-        </section>
-
+      <section className="content-grid home-content-grid">
         <section className="glass-card panel-block">
           <div className="section-head">
             <div>
@@ -592,18 +575,6 @@ function BookmarksPage() {
   );
 }
 
-function ShortcutCard({ label, symbol, detail, onClick }) {
-  return (
-    <button type="button" className="shortcut-card" onClick={onClick}>
-      <span className="shortcut-symbol" aria-hidden="true">{symbol}</span>
-      <div>
-        <p>{label}</p>
-        <span>{detail}</span>
-      </div>
-    </button>
-  );
-}
-
 function DrawerLayer({ open, children }) {
   return (
     <div className={`drawer-layer ${open ? 'visible' : ''}`}>
@@ -636,6 +607,36 @@ function ProfileDrawer({ navigate }) {
         <DetailRow label="Phone" value={user.phone} />
         <DetailRow label="Member since" value={user.memberSince} />
         <DetailRow label="Rank" value={user.rank} />
+      </section>
+
+      <section className="profile-course-section">
+        <div className="section-head">
+          <div>
+            <p className="eyebrow">Active courses</p>
+            <h2>Current learning stack</h2>
+          </div>
+        </div>
+
+        <div className="profile-course-grid">
+          {activeCourses.map((course) => (
+            <article key={course.title} className="profile-course-card">
+              <div className="profile-course-icon" aria-hidden="true">{course.symbol}</div>
+              <div className="profile-course-body">
+                <div className="course-line">
+                  <div>
+                    <h3>{course.title}</h3>
+                    <span>{course.track}</span>
+                  </div>
+                  <strong>{course.progress}%</strong>
+                </div>
+                <p>{course.detail}</p>
+                <div className="course-meter">
+                  <div className="course-meter-fill" style={{ width: `${course.progress}%` }} />
+                </div>
+              </div>
+            </article>
+          ))}
+        </div>
       </section>
 
       <button type="button" className="cta-button primary full-width" onClick={() => navigate('bookmarks')}>
