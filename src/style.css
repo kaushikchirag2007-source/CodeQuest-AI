@@ -18,7 +18,8 @@
     --shadow: 0 30px 70px rgba(0, 0, 0, 0.28);
   }
 
-  .light-theme {
+  .light-theme,
+  body.light-theme {
     --bg: #f6efe1;
     --bg-accent: rgba(244, 157, 62, 0.2);
     --bg-accent-two: rgba(62, 170, 153, 0.2);
@@ -52,6 +53,7 @@
       radial-gradient(circle at 85% 12%, var(--bg-accent-two), transparent 24%),
       linear-gradient(180deg, var(--bg) 0%, color-mix(in srgb, var(--bg) 88%, black 12%) 100%);
     color: var(--text);
+    transition: background-color 180ms ease, color 180ms ease;
   }
 
   button {
@@ -316,6 +318,16 @@
     letter-spacing: -0.05em;
   }
 
+  .title-highlight {
+    display: inline-block;
+    padding: 0 0.24em 0.04em;
+    margin: 0 0.04em 0 0;
+    border-radius: 0.5em;
+    color: color-mix(in srgb, var(--text) 88%, black 12%);
+    background: linear-gradient(135deg, rgba(240, 172, 86, 0.85), rgba(85, 207, 191, 0.58));
+    box-shadow: 0 10px 24px rgba(0, 0, 0, 0.08);
+  }
+
   .hero-text,
   .track-copy,
   .module-card p,
@@ -442,6 +454,17 @@
     border: 1px solid var(--line);
   }
 
+  .clickable-chip {
+    cursor: pointer;
+    transition: transform 180ms ease, border-color 180ms ease, background-color 180ms ease;
+  }
+
+  .clickable-chip:hover {
+    transform: translateY(-1px);
+    border-color: color-mix(in srgb, var(--amber) 36%, var(--line) 64%);
+    background: linear-gradient(135deg, rgba(240, 172, 86, 0.12), rgba(85, 207, 191, 0.1));
+  }
+
   .bars {
     display: grid;
     grid-template-columns: repeat(7, minmax(0, 1fr));
@@ -553,6 +576,10 @@
     gap: 14px;
   }
 
+  .shortcut-grid-five {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
   .shortcut-card {
     gap: 14px;
     padding: 18px;
@@ -603,6 +630,20 @@
     display: grid;
     grid-template-columns: minmax(0, 1fr) auto;
     align-items: center;
+  }
+
+  .progress-layout,
+  .progress-summary-grid {
+    display: grid;
+    gap: 20px;
+  }
+
+  .progress-layout {
+    grid-template-columns: minmax(0, 1.2fr) minmax(0, 0.8fr);
+  }
+
+  .progress-summary-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 
   .page-hero.amber {
@@ -821,7 +862,8 @@
   @media (max-width: 1180px) {
     .top-bar,
     .hero-panel,
-    .content-grid {
+    .content-grid,
+    .progress-layout {
       grid-template-columns: 1fr;
     }
 
@@ -839,7 +881,8 @@
     .content-grid,
     .module-grid,
     .shortcut-grid,
-    .metric-grid {
+    .metric-grid,
+    .progress-summary-grid {
       grid-template-columns: 1fr;
     }
 

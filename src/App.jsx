@@ -15,11 +15,12 @@ const user = {
 };
 
 const navItems = [
-  { id: 'home', label: 'Home', symbol: '⌂' },
-  { id: 'spoken', label: 'Spoken', symbol: '◌' },
+  { id: 'home', label: 'Home', symbol: '\u2302' },
+  { id: 'spoken', label: 'Spoken', symbol: '\u25cc' },
   { id: 'coding', label: 'Coding', symbol: '</>' },
-  { id: 'tests', label: 'Tests', symbol: '✓' },
-  { id: 'bookmarks', label: 'Bookmarks', symbol: '★' }
+  { id: 'progress', label: 'Progress', symbol: '\u25b2' },
+  { id: 'tests', label: 'Tests', symbol: '\u2713' },
+  { id: 'bookmarks', label: 'Bookmarks', symbol: '\u2605' }
 ];
 
 const overviewStats = [
@@ -34,7 +35,7 @@ const tracks = [
     eyebrow: 'Warm up your voice',
     title: 'Spoken Languages',
     description: 'Bite-size conversations, listening loops, and confidence drills for real-world fluency.',
-    symbol: '◌',
+    symbol: '\u25cc',
     tone: 'amber',
     progress: 74,
     highlights: ['18 live drills', '6 saved paths', '2 speaking rooms']
@@ -121,6 +122,11 @@ function App() {
   );
 
   useEffect(() => {
+    document.body.classList.toggle('light-theme', isLight);
+    document.body.classList.toggle('dark-theme', !isLight);
+  }, [isLight]);
+
+  useEffect(() => {
     function handlePointerDown(event) {
       if (openDrawer && drawerRef.current && !drawerRef.current.contains(event.target)) {
         setOpenDrawer(null);
@@ -165,8 +171,27 @@ function App() {
 
           <main className="page-shell">
             {activePage === 'home' ? <HomePage navigate={navigate} /> : null}
-            {activePage === 'spoken' ? <TrackPage title="Spoken languages" intro="Train listening, speaking, and rhythm with practical scenes that feel human, not textbook." modules={spokenModules} tone="amber" symbol="◌" /> : null}
-            {activePage === 'coding' ? <TrackPage title="Coding languages" intro="Build technical fluency with projects, debugging reps, and interview-style pressure practice." modules={codingModules} tone="teal" symbol="</>" /> : null}
+            {activePage === 'spoken' ? (
+              <TrackPage
+                title="Spoken Languages"
+                intro="Train listening, speaking, and rhythm with practical scenes that feel human, not textbook."
+                modules={spokenModules}
+                tone="amber"
+                symbol={'\u25cc'}
+                highlightWord="Spoken"
+              />
+            ) : null}
+            {activePage === 'coding' ? (
+              <TrackPage
+                title="Coding Languages"
+                intro="Build technical fluency with projects, debugging reps, and interview-style pressure practice."
+                modules={codingModules}
+                tone="teal"
+                symbol="</>"
+                highlightWord="Coding"
+              />
+            ) : null}
+            {activePage === 'progress' ? <ProgressPage /> : null}
             {activePage === 'tests' ? <TestsPage /> : null}
             {activePage === 'bookmarks' ? <BookmarksPage /> : null}
           </main>
@@ -208,7 +233,7 @@ function TopBar({ activePage, navigate, theme, setTheme, openDrawer, setOpenDraw
     <header className="top-bar glass-card">
       <div className="brand-block">
         <button type="button" className="brand-mark" onClick={() => navigate('home')} aria-label="Go to homepage">
-          ✦
+          {'\u2726'}
         </button>
         <div>
           <p className="brand-title">LinguaCode</p>
@@ -238,7 +263,7 @@ function TopBar({ activePage, navigate, theme, setTheme, openDrawer, setOpenDraw
           aria-label={isLight ? 'Switch to dark theme' : 'Switch to light theme'}
           title={isLight ? 'Dark mode' : 'Light mode'}
         >
-          <span className="tool-symbol" aria-hidden="true">{isLight ? '☾' : '☀'}</span>
+          <span className="tool-symbol" aria-hidden="true">{isLight ? '\u263e' : '\u2600'}</span>
         </button>
         <button
           type="button"
@@ -246,7 +271,7 @@ function TopBar({ activePage, navigate, theme, setTheme, openDrawer, setOpenDraw
           onClick={() => setOpenDrawer((value) => (value === 'notifications' ? null : 'notifications'))}
           aria-label="Open notifications"
         >
-          <span className="tool-symbol" aria-hidden="true">✉</span>
+          <span className="tool-symbol" aria-hidden="true">{'\u2709'}</span>
           {notificationCount ? <span className="tool-count">{notificationCount}</span> : null}
         </button>
         <button
@@ -255,7 +280,7 @@ function TopBar({ activePage, navigate, theme, setTheme, openDrawer, setOpenDraw
           onClick={() => setOpenDrawer((value) => (value === 'settings' ? null : 'settings'))}
           aria-label="Open settings"
         >
-          <span className="tool-symbol" aria-hidden="true">⚙</span>
+          <span className="tool-symbol" aria-hidden="true">{'\u2699'}</span>
         </button>
         <button
           type="button"
@@ -288,6 +313,9 @@ function HomePage({ navigate }) {
             <button type="button" className="cta-button secondary" onClick={() => navigate('coding')}>
               Open coding track
             </button>
+            <button type="button" className="cta-button secondary" onClick={() => navigate('progress')}>
+              Open progress
+            </button>
           </div>
         </div>
 
@@ -307,7 +335,9 @@ function HomePage({ navigate }) {
                 <p className="eyebrow">Focus pulse</p>
                 <h2>Weekly rhythm</h2>
               </div>
-              <span className="section-chip">86% on track</span>
+              <button type="button" className="section-chip clickable-chip" onClick={() => navigate('progress')}>
+                86% on track
+              </button>
             </div>
 
             <div className="bars">
@@ -337,7 +367,9 @@ function HomePage({ navigate }) {
               <span className="track-symbol" aria-hidden="true">{track.symbol}</span>
             </div>
 
-            <h2>{track.title}</h2>
+            <h2>
+              <HighlightText text={track.title} word={track.id === 'spoken' ? 'Spoken' : 'Coding'} />
+            </h2>
             <p className="track-copy">{track.description}</p>
 
             <div className="track-meter">
@@ -362,11 +394,12 @@ function HomePage({ navigate }) {
             </div>
           </div>
 
-          <div className="shortcut-grid">
-            <ShortcutCard label="Tests" symbol="✓" detail="Run a mock or skill check" onClick={() => navigate('tests')} />
-            <ShortcutCard label="Bookmarks" symbol="★" detail="Review saved questions and notes" onClick={() => navigate('bookmarks')} />
-            <ShortcutCard label="Spoken" symbol="◌" detail="Continue conversation practice" onClick={() => navigate('spoken')} />
+          <div className="shortcut-grid shortcut-grid-five">
+            <ShortcutCard label="Tests" symbol={'\u2713'} detail="Run a mock or skill check" onClick={() => navigate('tests')} />
+            <ShortcutCard label="Bookmarks" symbol={'\u2605'} detail="Review saved questions and notes" onClick={() => navigate('bookmarks')} />
+            <ShortcutCard label="Spoken" symbol={'\u25cc'} detail="Continue conversation practice" onClick={() => navigate('spoken')} />
             <ShortcutCard label="Coding" symbol="</>" detail="Resume labs and interviews" onClick={() => navigate('coding')} />
+            <ShortcutCard label="Progress" symbol={'\u25b2'} detail="See detailed learning progress" onClick={() => navigate('progress')} />
           </div>
         </section>
 
@@ -400,13 +433,13 @@ function HomePage({ navigate }) {
   );
 }
 
-function TrackPage({ title, intro, modules, tone, symbol }) {
+function TrackPage({ title, intro, modules, tone, symbol, highlightWord }) {
   return (
     <div className="page-stack">
       <section className={`page-hero glass-card ${tone}`}>
         <div>
           <p className="eyebrow">Track space</p>
-          <h1>{title}</h1>
+          <h1><HighlightText text={title} word={highlightWord} /></h1>
           <p className="hero-text">{intro}</p>
         </div>
         <div className="page-hero-badge" aria-hidden="true">{symbol}</div>
@@ -433,6 +466,77 @@ function TrackPage({ title, intro, modules, tone, symbol }) {
   );
 }
 
+function ProgressPage() {
+  return (
+    <div className="page-stack">
+      <section className="page-hero glass-card teal">
+        <div>
+          <p className="eyebrow">Detailed progress</p>
+          <h1>Progress in detail</h1>
+          <p className="hero-text">See how your weekly rhythm, course completion, and key study stats are trending in one focused view.</p>
+        </div>
+        <div className="page-hero-badge" aria-hidden="true">{'\u25b2'}</div>
+      </section>
+
+      <section className="progress-layout">
+        <article className="glass-card panel-block">
+          <div className="section-head">
+            <div>
+              <p className="eyebrow">Weekly trend</p>
+              <h2>Study rhythm</h2>
+            </div>
+            <span className="section-chip">7 day view</span>
+          </div>
+
+          <div className="bars">
+            {weeklyBars.map((bar) => (
+              <div key={bar.day} className="bar-column">
+                <div className="bar-track">
+                  <div className="bar-fill" style={{ height: `${bar.value}%` }} />
+                </div>
+                <span>{bar.day}</span>
+              </div>
+            ))}
+          </div>
+        </article>
+
+        <article className="glass-card panel-block">
+          <div className="section-head">
+            <div>
+              <p className="eyebrow">Course progress</p>
+              <h2>Completion detail</h2>
+            </div>
+          </div>
+
+          <div className="course-list">
+            {activeCourses.map((course) => (
+              <article key={course.title} className="course-item">
+                <div className="course-line">
+                  <div>
+                    <h3>{course.title}</h3>
+                    <span>{course.track}</span>
+                  </div>
+                  <strong>{course.progress}%</strong>
+                </div>
+                <div className="course-meter">
+                  <div className="course-meter-fill" style={{ width: `${course.progress}%` }} />
+                </div>
+              </article>
+            ))}
+          </div>
+        </article>
+      </section>
+
+      <section className="progress-summary-grid">
+        <MetricCard label="Lessons done" value={String(user.lessonsDone)} />
+        <MetricCard label="Tests passed" value={String(user.testsPassed)} />
+        <MetricCard label="Current streak" value={`${user.streak} days`} />
+        <MetricCard label="XP total" value={user.xp} />
+      </section>
+    </div>
+  );
+}
+
 function TestsPage() {
   return (
     <div className="page-stack">
@@ -442,7 +546,7 @@ function TestsPage() {
           <h1>Tests and mock sessions</h1>
           <p className="hero-text">Practice with calm structure and enough feedback to make retakes feel useful, not stressful.</p>
         </div>
-        <div className="page-hero-badge" aria-hidden="true">✓</div>
+        <div className="page-hero-badge" aria-hidden="true">{'\u2713'}</div>
       </section>
 
       <section className="stack-list">
@@ -451,7 +555,7 @@ function TestsPage() {
             <div className="list-card-row">
               <div>
                 <h2>{test.title}</h2>
-                <span>{test.type} · {test.questions} questions</span>
+                <span>{test.type} {'\u00b7'} {test.questions} questions</span>
               </div>
               <strong>{test.score}</strong>
             </div>
@@ -472,7 +576,7 @@ function BookmarksPage() {
           <h1>Bookmarks and quick returns</h1>
           <p className="hero-text">Keep tricky ideas nearby so your review sessions start fast and feel less scattered.</p>
         </div>
-        <div className="page-hero-badge" aria-hidden="true">★</div>
+        <div className="page-hero-badge" aria-hidden="true">{'\u2605'}</div>
       </section>
 
       <section className="module-grid">
@@ -570,8 +674,8 @@ function SettingsDrawer({
           detail={theme === 'light' ? 'Bright mode is active' : 'Dark mode is active'}
           checked={theme === 'light'}
           onChange={() => setTheme((value) => (value === 'light' ? 'dark' : 'light'))}
-          checkedLabel="☀"
-          uncheckedLabel="☾"
+          checkedLabel={'\u2600'}
+          uncheckedLabel={'\u263e'}
         />
         <SettingToggle
           label="Daily reminders"
@@ -678,6 +782,22 @@ function ChoiceGroup({ label, selected, options, onSelect }) {
         ))}
       </div>
     </section>
+  );
+}
+
+function HighlightText({ text, word }) {
+  if (!word || !text.includes(word)) {
+    return text;
+  }
+
+  const [before, after] = text.split(word);
+
+  return (
+    <>
+      {before}
+      <span className="title-highlight">{word}</span>
+      {after}
+    </>
   );
 }
 
