@@ -262,6 +262,13 @@ function TopNav({ streak, notificationCount, openPanel, setOpenPanel }) {
         </div>
         <button
           type="button"
+          className="toolbar-button"
+          aria-label="Leaderboard"
+        >
+          <TrophyIcon />
+        </button>
+        <button
+          type="button"
           className={`toolbar-button ${openPanel === 'notifications' ? 'active' : ''}`}
           aria-label="Notifications"
           onClick={() => setOpenPanel((value) => (value === 'notifications' ? null : 'notifications'))}
